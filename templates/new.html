@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Создание путешествия | TravelGuide</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css"/>
+  <style>
+    main {
+      margin-top: 90px;
+      min-height: calc(100vh - 90px);
+      padding: 30px 0;
+    }
+
+    header {
+      position: fixed;
+      width: 100%;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+
+    .brand-logo {
+      font-size: 24px;
+      font-weight: bold;
+      color: white;
+      margin-left: 20px;
+      font-family: 'Arial', sans-serif;
+    }
+
+    .wizard-container {
+      width: 100%;
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .wizard-card {
+      padding: 20px;
+      border-radius: 8px;
+      background-color: #e1f5fe;
+      box-shadow: 0 2px 2px rgba(0,0,0,0.14), 
+                  0 3px 1px -2px rgba(0,0,0,0.12), 
+                  0 1px 5px rgba(0,0,0,0.2);
+    }
+
+    .wizard-card h4 {
+      margin-top: 0;
+      color: #039be5;
+    }
+
+    .step {
+      display: none;
+    }
+
+    .step.active {
+      display: block;
+    }
+
+    .navigation-buttons {
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .error-message {
+      color: #f44336;
+      font-size: 0.8rem;
+      margin-top: -15px;
+      margin-bottom: 15px;
+    }
+    .select-wrapper ul.dropdown-content.select-dropdown li:not(.disabled) {
+        display: block !important;
+    }
+
+        .select-wrapper ul.dropdown-content.select-dropdown li.disabled {
+        display: none !important;
+    }
+
+        .select-wrapper input.select-dropdown {
+        pointer-events: all !important;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Навигация -->
+  <header>
+    <nav class="indigo">
+      <div class="nav-wrapper">
+        <a href="/" class="brand-logo left">TravelGuide</a>
+        <ul class="right">
+          <li>
+            <a class="dropdown-trigger" href="#!" data-target="user_dropdown">
+              <i class="material-icons">account_circle</i>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Выпадающее меню -->
+  <ul id="user_dropdown" class="dropdown-content">
+    <li><a href="#!" id="profileLink">Профиль</a></li>
+    <li><a href="#!" id="logoutLink">Выйти</a></li>
+  </ul>
+
+  <main>
+    <div class="wizard-container">
+      <div class="wizard-card">
+        <h4><i class="material-icons left">add</i> Создание нового путешествия</h4>
+        
+        <form id="createTravelForm" method="post">
+          <input type="hidden" name="user_id" id="userIdInput" 
+                 value="{{ user_id if user_id else '' }}">
+          
+          <!-- Шаг 1: Город отправления -->
+          <div class="step active" id="step1">
+            <p>1. Откуда вы отправляетесь?</p>
+            <div class="input-field">
+              <select name="departure_city" id="departureCity" required>
+                <option value="" disabled selected>Выберите город</option>
+                {% for city in cities %}
+                  <option value="{{ city.city_id }}">{{ city.name }}</option>
+                {% endfor %}
+              </select>
+              <label>Город отправления</label>
+              <div class="error-message" id="departureCityError"></div>
+            </div>
+          </div>
+          
+          <!-- Шаг 2: Город назначения -->
+          <div class="step" id="step2">
+            <p>2. Куда вы хотите отправиться?</p>
+            <div class="input-field">
+              <select name="destination_city" id="destinationCity" required>
+                <option value="" disabled selected>Выберите город</option>
+                {% for city in cities %}
+                  <option value="{{ city.city_id }}">{{ city.name }}</option>
+                {% endfor %}
+              </select>
+              <label>Город назначения</label>
+              <div class="error-message" id="destinationCityError"></div>
+            </div>
+          </div>
+          <!-- Шаг 3: Транспорт -->
+          <div class="step" id="step3">
+            <p>3. Выберите транспорт</p>
+            <div class="input-field">
+            <select name="transport" id="transportSelect" required>
+                <option value="" disabled selected>Выберите транспорт</option>
+                <option value="Самолет">Самолет</option>
+                <option value="Поезд">Поезд</option>
+                <option value="Автобус">Автобус</option>
+                <option value="Автомобиль">Автомобиль</option>
+                <option value="Паром">Паром</option>
+            </select>
+            <label>Транспорт</label>
+            <div class="error-message" id="transportError"></div>
+            </div>
+        </div>
+
+          <!-- Шаг 4: Даты поездки -->
+          <div class="step" id="step4">
+            <p>4. Укажите даты поездки</p>
+            <div class="input-field">
+              <input type="text" name="start_date" id="startDate" class="datepicker" required>
+              <label>Дата начала</label>
+              <div class="error-message" id="startDateError"></div>
+            </div>
+            <div class="input-field">
+              <input type="text" name="end_date" id="endDate" class="datepicker" required>
+              <label>Дата окончания</label>
+              <div class="error-message" id="endDateError"></div>
+            </div>
+          </div>
+    
+            <!-- Шаг 5: Что посмотреть -->
+          <div class="step" id="step5">
+            <p>5. Что вы хотите посмотреть? (можно выбрать несколько)</p>
+            <div class="input-field">
+              <select name="entertainments[]" multiple id="entertainmentsSelect">
+                <option value="" disabled>Выберите развлечения</option>
+                {% for entertainment in entertainments %}
+                <option value="{{ entertainment.entertainment_id }}" data-city-id="{{ entertainment.city.city_id }}" data-event-time="{{ entertainment.event_time.strftime('%d.%m.%Y %H:%M') }}"> 
+                    {{ entertainment.event_name }}; {{ entertainment.address }};  {{ entertainment.duration }};  {{ entertainment.event_time }};  {{ entertainment.city.name }}
+                  </option>
+                {% endfor %}
+              </select>
+              <label>Развлечения</label>
+            </div>
+          </div>
+          
+          <!-- Шаг 6: Где остановиться -->
+          <div class="step" id="step6">
+            <p>6. Где вы хотите остановиться?</p>
+            <div class="input-field">
+              <select name="accommodations[]" multiple id="accommodationsSelect">
+                <option value="" disabled>Выберите размещения</option>
+                {% for accommodation in accommodations %}
+                  <option value="{{ accommodation.accommodation_id }}" data-city-id="{{ accommodation.city.city_id }}" data-check-in="{{ accommodation.check_in.strftime('%d.%m.%Y %H:%M') }}"
+                  data-check-out="{{ accommodation.check_out.strftime('%d.%m.%Y %H:%M') }}"> 
+                    {{ accommodation.name }}; {{ accommodation.address }}; {{ accommodation.price }}; {{ accommodation.type }}; {{ accommodation.rating }}; {{ accommodation.check_in }} - {{ accommodation.check_out }}; {{ accommodation.city.name }}
+                  </option>
+                {% endfor %}
+              </select>
+              <label>Размещения</label>
+            </div>
+          </div>
+          
+          <!-- Шаг 7: Подтверждение -->
+          <div class="step" id="step7">
+            <p>7. Проверьте данные и подтвердите создание</p>
+            <div id="summaryData" class="card-panel teal lighten-5" style="padding: 20px; margin-bottom: 20px;">
+              <h5>Детали путешествия:</h5>
+              <div class="row">
+                <div class="col s6">
+                  <p><strong>Город отправления:</strong> <span id="summaryDeparture"></span></p>
+                  <p><strong>Город назначения:</strong> <span id="summaryDestination"></span></p>
+                </div>
+                <div class="col s6">
+                  <p><strong>Дата начала:</strong> <span id="summaryStartDate"></span></p>
+                  <p><strong>Дата окончания:</strong> <span id="summaryEndDate"></span></p>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col s12">
+                  <p><strong>Развлечения:</strong></p>
+                  <ul id="summaryEntertainments" class="collection"></ul>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col s12">
+                  <p><strong>Размещения:</strong></p>
+                  <ul id="summaryAccommodations" class="collection"></ul>
+                </div>
+              </div>
+            </div>
+            <div class="navigation-buttons">
+              <button type="button" id="prevStepBtn" class="btn waves-effect waves-light grey">
+                <i class="material-icons left">arrow_back</i> Назад
+              </button>
+              <button type="submit" class="btn waves-effect waves-light green">
+                Создать путешествие <i class="material-icons right">check</i>
+              </button>
+            </div>
+          </div>
+          
+          <div class="navigation-buttons" id="mainNavigation">
+            <button type="button" id="prevStepBtnMain" class="btn waves-effect waves-light grey" style="display:none;">
+              <i class="material-icons left">arrow_back</i> Назад
+            </button>
+            <button type="button" id="nextStepBtn" class="btn waves-effect waves-light blue">
+              Далее <i class="material-icons right">arrow_forward</i>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      document.addEventListener('DOMContentLoaded', function() {
+        var selects = document.querySelectorAll('select');
+        M.FormSelect.init(selects, {
+            dropdownOptions: {
+            closeOnClick: false
+            }
+        });
+    });
+      const today = new Date();
+      M.Datepicker.init(document.querySelectorAll('.datepicker'), {
+        format: 'dd.mm.yyyy',
+        autoClose: true,
+        minDate: today,
+        onClose: function() {
+          // При изменении даты обновляем фильтрацию
+          filterAllOptions();
+        }
+      });
+      
+      // Устанавливаем ID текущего пользователя
+      const userId = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
+      document.querySelector('#userIdInput').value = userId;
+      
+      // Логика пошагового мастера
+      let currentStep = 1;
+      const totalSteps = 7;
+      
+      // Функция для обновления видимости шагов
+      function updateSteps() {
+        document.querySelectorAll('.step').forEach((step, index) => {
+          if (index + 1 === currentStep) {
+            step.classList.add('active');
+            if (currentStep === 7) {
+                updateSummaryData();
+            }
+          } else {
+            step.classList.remove('active');
+          }
+        });
+        
+        // Обновляем видимость кнопок навигации
+        document.querySelector('#prevStepBtnMain').style.display = currentStep > 1 ? 'block' : 'none';
+        document.querySelector('#nextStepBtn').style.display = currentStep < totalSteps ? 'block' : 'none';
+        document.querySelector('#mainNavigation').style.display = currentStep < totalSteps ? 'flex' : 'none';
+        M.updateTextFields();
+        var selects = document.querySelectorAll('select');
+        selects.forEach(function(select) {
+            var instance = M.FormSelect.getInstance(select);
+            if (instance) {
+            instance.destroy();
+            }
+            M.FormSelect.init(select);
+        });
+    }
+      
+      // Переход к следующему шагу
+      document.querySelector('#nextStepBtn').addEventListener('click', function() {
+        if (!validateStep(currentStep)) return;
+        
+        currentStep++;
+        updateSteps();
+      });
+      
+      // Переход к предыдущему шагу (основная кнопка)
+      document.querySelector('#prevStepBtnMain').addEventListener('click', function() {
+        currentStep--;
+        updateSteps();
+      });
+      
+      // Переход к предыдущему шагу (на шаге подтверждения)
+      document.querySelector('#prevStepBtn').addEventListener('click', function() {
+        currentStep--;
+        updateSteps();
+      });
+      
+      function validateStep(step) {
+        let isValid = true;
+        
+        function showError(elementId, message) {
+          const errorElement = document.getElementById(elementId);
+          errorElement.textContent = message;
+          isValid = false;
+        }
+        
+        function clearError(elementId) {
+          document.getElementById(elementId).textContent = '';
+        }
+        
+        switch(step) {
+          case 1:
+            const departureCity = document.querySelector('#departureCity').value;
+            if (!departureCity) {
+              showError('departureCityError', 'Пожалуйста, выберите город отправления');
+            } else {
+              clearError('departureCityError');
+            }
+            break;
+            
+          case 2:
+            const destinationCity = document.querySelector('#destinationCity').value;
+            if (!destinationCity) {
+              showError('destinationCityError', 'Пожалуйста, выберите город назначения');
+            } else {
+              clearError('destinationCityError');
+            }
+            break;
+            
+        case 3:
+            const transport = document.querySelector('#transportSelect').value;
+            if (!transport) {
+                showError('transportError', 'Пожалуйста, выберите транспорт');
+            } else {
+                clearError('transportError');
+            }
+            break;
+          case 4:
+            const startDate = document.querySelector('#startDate').value;
+            const endDate = document.querySelector('#endDate').value;
+            
+            if (!startDate) {
+              showError('startDateError', 'Пожалуйста, укажите дату начала');
+            } else {
+              clearError('startDateError');
+            }
+            
+            if (!endDate) {
+              showError('endDateError', 'Пожалуйста, укажите дату окончания');
+            } else {
+              clearError('endDateError');
+            }
+            break;
+        }
+        
+        return isValid;
+      }
+      
+      function updateSummaryData() {
+        // Город отправления
+        const departureSelect = document.querySelector('#departureCity');
+        const departureCity = departureSelect.options[departureSelect.selectedIndex].text;
+        document.querySelector('#summaryDeparture').textContent = departureCity;
+        
+        // Город назначения
+        const destinationSelect = document.querySelector('#destinationCity');
+        const destinationCity = destinationSelect.options[destinationSelect.selectedIndex].text;
+        document.querySelector('#summaryDestination').textContent = destinationCity;
+        // Транспорт
+        const transportSelect = document.querySelector('#transportSelect');
+        const selectedTransport = transportSelect.options[transportSelect.selectedIndex]?.text || 'Не выбран';
+        const summaryRow = document.querySelector('#summaryData .row');
+        const existingTransport = summaryRow.querySelector('p[data-summary="transport"]');
+        if (existingTransport) {
+        existingTransport.remove();
+        }
+
+        // Добавляем новый
+        const transportPara = document.createElement('p');
+        transportPara.setAttribute('data-summary', 'transport');
+        transportPara.innerHTML = `<strong>Транспорт:</strong> ${selectedTransport}`;
+        summaryRow.prepend(transportPara);
+
+        // Даты
+        document.querySelector('#summaryStartDate').textContent = document.querySelector('#startDate').value;
+        document.querySelector('#summaryEndDate').textContent = document.querySelector('#endDate').value;
+        
+        // Развлечения
+        const entertainmentsList = document.querySelector('#summaryEntertainments');
+        entertainmentsList.innerHTML = '';
+        const entertainmentOptions = document.querySelectorAll('#entertainmentsSelect option:checked');
+        entertainmentOptions.forEach(option => {
+            const li = document.createElement('li');
+            li.className = 'collection-item';
+            li.textContent = option.text;
+            entertainmentsList.appendChild(li);
+        });
+        
+        // Размещения
+        const accommodationsList = document.querySelector('#summaryAccommodations');
+        accommodationsList.innerHTML = '';
+        const accommodationOptions = document.querySelectorAll('#accommodationsSelect option:checked');
+        accommodationOptions.forEach(option => {
+            const li = document.createElement('li');
+            li.className = 'collection-item';
+            li.textContent = option.text;
+            accommodationsList.appendChild(li);
+        });
+
+        if (entertainmentOptions.length === 0) {
+            const li = document.createElement('li');
+            li.className = 'collection-item grey-text';
+            li.textContent = 'Не выбрано';
+            entertainmentsList.appendChild(li);
+        }
+        
+        if (accommodationOptions.length === 0) {
+            const li = document.createElement('li');
+            li.className = 'collection-item grey-text';
+            li.textContent = 'Не выбрано';
+            accommodationsList.appendChild(li);
+        }
+      }
+      
+      function filterAllOptions() {
+        const cityId = document.querySelector('#destinationCity').value;
+        const startDate = document.querySelector('#startDate').value;
+        const endDate = document.querySelector('#endDate').value;
+        
+        if (cityId) {
+          filterEntertainmentsByCityAndDate(cityId, startDate, endDate);
+          filterAccommodationsByCityAndDate(cityId, startDate, endDate);
+        }
+      }
+    
+      function parseDate(dateStr, defaultTime = '00:00') {
+        if (!dateStr) return null;
+        
+        // Если дата уже содержит время (например "08.05.2025 14:00")
+        if (dateStr.includes(' ')) {
+            const [datePart, timePart] = dateStr.split(' ');
+            const [day, month, year] = datePart.split('.');
+            const [hours, minutes] = timePart.split(':');
+            return new Date(year, month-1, day, hours, minutes);
+        }
+        
+        // Если дата без времени (например "08.05.2025")
+        const [day, month, year] = dateStr.split('.');
+        const [hours, minutes] = defaultTime.split(':');
+        return new Date(year, month-1, day, hours, minutes);
+       }
+
+      function isEventInDateRange(eventTime, startDate, endDate) {
+        if (!startDate || !endDate) return true;
+        if (!eventTime) return true;
+        
+        const eventDate = parseDate(eventTime);
+        const selStart = parseDate(startDate);
+        const selEnd = parseDate(endDate, '23:59');
+        
+        return eventDate >= selStart && eventDate <= selEnd;
+       }
+       function isAccommodationAvailable(checkIn, checkOut, selectedStart, selectedEnd) {
+        if (!selectedStart || !selectedEnd) return true;
+        if (!checkIn || !checkOut) return true;
+        
+        const accStart = parseDate(checkIn);
+        const accEnd = parseDate(checkOut);
+        const selStart = parseDate(selectedStart);
+        const selEnd = parseDate(selectedEnd, '23:59');
+        
+        // Проверяем что выбранный период пересекается с периодом доступности
+        return (selStart >= accStart && selStart <= accEnd) || 
+            (selEnd >= accStart && selEnd <= accEnd) ||
+            (selStart <= accStart && selEnd >= accEnd);
+      }
+       function filterEntertainmentsByCityAndDate(cityId, startDate, endDate) {
+        const selectElement = document.querySelector('#entertainmentsSelect');
+        const options = selectElement.querySelectorAll('option');
+        let hasVisibleOptions = false;
+        
+        options.forEach(option => {
+          if (!option.value) {
+            option.style.display = 'block';
+            option.disabled = false;
+            return;
+          }
+          
+          const optionCityId = option.getAttribute('data-city-id');
+          const eventTime = option.getAttribute('data-event-time');
+          
+          const cityMatch = cityId === optionCityId;
+          const dateMatch = isEventInDateRange(eventTime, startDate, endDate);
+          
+          if (cityMatch && dateMatch) {
+            option.style.display = 'block';
+            option.disabled = false;
+            hasVisibleOptions = true;
+          } else {
+            option.style.display = 'none';
+            option.disabled = true;
+            option.selected = false;
+          }
+        });
+        
+        const instance = M.FormSelect.getInstance(selectElement);
+        if (instance) instance.destroy();
+        M.FormSelect.init(selectElement);
+        
+        if (!hasVisibleOptions && cityId) {
+          M.toast({html: 'Для выбранного города и дат нет доступных развлечений', classes: 'blue'});
+        }
+      }
+
+      function filterAccommodationsByCityAndDate(cityId, startDate, endDate) {
+        const selectElement = document.querySelector('#accommodationsSelect');
+        const options = selectElement.querySelectorAll('option');
+        let hasVisibleOptions = false;
+        
+        options.forEach(option => {
+          if (!option.value) {
+            option.style.display = 'block';
+            option.disabled = false;
+            return;
+          }
+          
+          const optionCityId = option.getAttribute('data-city-id');
+          const checkIn = option.getAttribute('data-check-in');
+          const checkOut = option.getAttribute('data-check-out');
+          
+          const cityMatch = cityId === optionCityId;
+          const dateMatch = isAccommodationAvailable(checkIn, checkOut, startDate, endDate);
+          
+          if (cityMatch && dateMatch) {
+            option.style.display = 'block';
+            option.disabled = false;
+            hasVisibleOptions = true;
+          } else {
+            option.style.display = 'none';
+            option.disabled = true;
+            option.selected = false;
+          }
+        });
+        
+        // Переинициализация select
+        const instance = M.FormSelect.getInstance(selectElement);
+        if (instance) instance.destroy();
+        M.FormSelect.init(selectElement);
+        
+        if (!hasVisibleOptions && cityId) {
+          M.toast({html: 'Для выбранного города и дат нет доступных размещений', classes: 'blue'});
+        }
+      }
+
+      document.querySelector('#destinationCity').addEventListener('change', filterAllOptions);
+      document.querySelector('#startDate').addEventListener('change', filterAllOptions);
+      document.querySelector('#endDate').addEventListener('change', filterAllOptions);
+
+      // При инициализации страницы скрываем все опции
+      document.addEventListener('DOMContentLoaded', function() {
+        filterEntertainmentsByCityAndDate(null, null, null);
+        filterAccommodationsByCityAndDate(null, null, null);
+      });
+
+    // Обработчик изменения города назначения
+    document.querySelector('#destinationCity').addEventListener('change', function() {
+      filterEntertainmentsByCityAndDate(this.value);
+    });
+
+    // При инициализации страницы скрываем все развлечения
+    document.addEventListener('DOMContentLoaded', function() {
+      filterEntertainmentsByCityAndDate(null);
+    });
+      document.querySelector('#createTravelForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Проверка всех обязательных полей перед отправкой
+        if (!validateStep(1) || !validateStep(2) || !validateStep(3) || !validateStep(4)) {
+          M.toast({html: 'Пожалуйста, заполните все обязательные поля', classes: 'red'});
+          return;
+        }
+        
+        try {
+          const formData = new FormData(this);
+          
+          const entertainmentOptions = document.querySelectorAll('#entertainmentsSelect option:checked');
+          const accommodationOptions = document.querySelectorAll('#accommodationsSelect option:checked');
+          
+          formData.delete('entertainments[]');
+          formData.delete('accommodations[]');
+          
+          entertainmentOptions.forEach(option => {
+            formData.append('entertainments[]', option.value);
+          });
+          
+          accommodationOptions.forEach(option => {
+            formData.append('accommodations[]', option.value);
+          });
+          
+          const formObject = {};
+          formData.forEach((value, key) => {
+            if (formObject[key]) {
+              if (!Array.isArray(formObject[key])) {
+                formObject[key] = [formObject[key]];
+              }
+              formObject[key].push(value);
+            } else {
+              formObject[key] = value;
+            }
+          });
+          
+          
+          const response = await fetch('/route/new', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+            },
+            body: JSON.stringify(formObject)
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Ошибка сервера');
+          }
+          
+          const result = await response.json();
+          M.toast({html: 'Путешествие успешно создано!', classes: 'green'});
+          window.location.href = `/profile`;
+        } catch (error) {
+          console.error('Ошибка:', error);
+          M.toast({html: `Ошибка при создании путешествия: ${error.message}`, classes: 'red'});
+        }
+      });
+      
+      // Инициализация выпадающего меню пользователя
+      M.Dropdown.init(document.querySelectorAll('.dropdown-trigger'), {
+        constrainWidth: false,
+        coverTrigger: false
+      });
+      
+      $('#logoutLink').on('click', function() {
+        localStorage.removeItem('auth_token'); 
+        localStorage.removeItem('user_id');
+        sessionStorage.removeItem('auth_token');
+        sessionStorage.removeItem('user_id');
+        window.location.replace('/');
+      });
+      
+      $('#profileLink').on('click', function() {
+        const userId = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
+        if (userId) {
+          window.location.href = `/profile_user/${userId}`;
+        } else {
+          M.toast({html: 'Не удалось получить ID пользователя', classes: 'red'});
+        }
+      });
+      
+      // Инициализация первого шага
+      updateSteps();
+    });
+  </script>
+</body>
+</html>

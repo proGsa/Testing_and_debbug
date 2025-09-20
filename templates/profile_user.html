@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TravelGuide - Профиль</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <style>
+    header {
+      position: fixed;
+      width: 100%;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+    .brand-logo {
+      font-size: 24px; 
+      font-weight: bold; 
+      color: white;
+      margin-left: 20px;
+      font-family: 'Arial', sans-serif;
+    }
+    .profile-container {
+      margin-top: 20px;
+      padding: 20px;
+    }
+    .profile-card {
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .profile-header {
+      margin-bottom: 20px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+    .route-card {
+      margin-bottom: 20px;
+      border-left: 4px solid #5c6bc0;
+      padding-left: 10px;
+    }
+    
+    .no-routes {
+      text-align: center;
+      padding: 40px 0;
+    }
+    
+    .no-routes i {
+      display: block;
+      margin-bottom: 20px;
+    }
+    
+    .status-active {
+      color: #4caf50;
+      font-weight: bold;
+    }
+    
+    .badge {
+      margin-right: 10px;
+    }
+    .card-action {
+      border-top: 1px solid #eee;
+      margin-top: 15px;
+      padding-top: 15px;
+    }
+    .collection .collection-item.avatar {
+      padding-left: 72px;
+      position: relative;
+    }
+
+    .collection .collection-item.avatar .circle {
+      position: absolute;
+      width: 42px;
+      height: 42px;
+      overflow: hidden;
+      left: 15px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .collection .collection-item.avatar i.material-icons {
+      font-size: 24px;
+    }
+
+    .collection-item.avatar .title {
+      font-weight: 500;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .secondary-content {
+      color: #5c6bc0;
+    }
+    .tabs .tab a {
+      color: #42a5f5; /* Голубой цвет */
+      opacity: 0.7; /* Немного прозрачности для неактивных вкладок */
+    }
+
+    .tabs .tab a:hover,
+    .tabs .tab a.active {
+      color: #1e88e5; /* Более насыщенный синий для активной/при наведении */
+      opacity: 1;
+    }
+
+    .tabs .indicator {
+      background-color: #42a5f5; /* Голубой цвет индикатора */
+      height: 3px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Навигация (как в главной странице) -->
+  <header>
+    <nav class="indigo">
+      <div class="nav-wrapper">
+        <a href="/" class="brand-logo left">TravelGuide</a>
+        <ul class="right">
+          <li>
+            <a class="dropdown-trigger" href="#!" data-target="user_dropdown">
+              <i class="material-icons">account_circle</i>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Выпадающее меню -->
+  <ul id="user_dropdown" class="dropdown-content">
+    <li><a href="#!" id="mainLink">Главная</a></li>
+    <li><a href="#!" id="logoutLink">Выйти</a></li>
+  </ul>
+
+  <!-- Основной контент -->
+  <main>
+    <div class="container profile-container">
+      <div class="row">
+        <div class="col s12 m8 offset-m2">
+          <div class="profile-card">
+            <div class="profile-header">
+              <h4>Мой профиль</h4>
+            </div>
+            <div class="row">
+              <div class="col s12">
+                <p><strong>Имя:</strong> <span id="user-name">{{ user.user.fio }}</span></p>
+                <p><strong>Email:</strong> <span id="user-email">{{ user.user.email }}</span></p>
+                <p><strong>Логин:</strong> <span id="user-login">{{ user.user.login }}</span></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Блок с активными путешествиями -->
+          <div class="profile-card">
+            <div class="row">
+              <div class="col s12">
+                <ul class="tabs">
+                  <li class="tab col s6"><a class="active" href="#active-travels">Активные</a></li>
+                  <li class="tab col s6"><a href="#completed-travels">Архив</a></li>
+                </ul>
+              </div>
+              
+              <!-- Активные путешествия -->
+              <div id="active-travels" class="col s12">
+                {% if active_routes %}
+                  {% for route in active_routes %}
+                    <div class="card hoverable">
+                      <div class="card-content">
+                        <!-- Основная информация о маршруте -->
+                        <div class="section" style="margin-top: 15px;">
+                          <h6><i class="material-icons tiny">group</i> Участники:</h6>
+                          {% if route.users %}
+                            <ul class="collection">
+                              {% for user in route.users %}
+                                {% if user.user_id == current_user_id %}Вы{% else %}{{ user.fio }}{% endif %}{% if not loop.last %}, {% endif %}
+                              {% endfor %}
+                            </ul>
+                          {% else %}
+                            <p>Нет участников</p>
+                          {% endif %}
+                        </div>
+                        <div class="row valign-wrapper">
+                          <div class="col s9">
+                            <span class="card-title">
+                              {{ route.destination_city }}
+                            </span>
+                            <p>
+                              <i class="material-icons tiny">date_range</i>
+                              {{ route.start_time.strftime('%d.%m.%Y') }} - {{ route.end_time.strftime('%d.%m.%Y') }}
+                            </p>
+                            <p>
+                              <i class="material-icons tiny">directions_transit</i>
+                              {{ route.transport }}
+                            </p>
+                            <p>
+                              <i class="material-icons tiny">attach_money</i>
+                              Стоимость: {{ route.cost }} руб.
+                            </p>
+                          </div>
+                          <div class="col s3 right-align">
+                            <a href="/route/edit/{{ route.route_id }}" 
+                              class="btn-floating btn-small waves-effect waves-light blue"
+                              title="Редактировать"
+                              style="margin-right: 5px;">
+                              <i class="material-icons">edit</i>
+                            </a>
+                            
+                            <!-- Кнопка завершения -->
+                            <form action="/travel/complete/{{ route.travel_id }}" 
+                                  method="post" 
+                                  style="display: inline-block;">
+                              <button type="submit" 
+                                      class="btn-floating btn-small waves-effect waves-light green"
+                                      title="Завершить путешествие">
+                                <i class="material-icons">check</i>
+                              </button>
+                            </form>
+                          </div>
+                        </div>
+                
+                        <!-- Раздел с развлечениями -->
+                        <div class="section" style="margin-top: 15px;">
+                          <h6><i class="material-icons tiny">local_activity</i> Развлечения:</h6>
+                          <div class="row">
+                            {% for ent in route.entertainments %}
+                            <div class="col s12 m6">
+                              <div class="card-panel grey lighten-4" style="padding: 10px; margin: 5px 0;">
+                                <strong>{{ ent.event_name }}</strong>
+                                <p>
+                                  <i class="material-icons tiny">location_on</i> 
+                                  {{ ent.city.name }}, {{ ent.address }}
+                                </p>
+                                <p>
+                                  <i class="material-icons tiny">access_time</i> 
+                                  {{ ent.event_time.strftime('%d.%m.%Y %H:%M') }} ({{ ent.duration }})
+                                </p>
+                              </div>
+                            </div>
+                            {% else %}
+                            <div class="col s12">
+                              <p>Нет запланированных развлечений</p>
+                            </div>
+                            {% endfor %}
+                          </div>
+                        </div>
+                
+                        <!-- Раздел с проживанием -->
+                        <div class="section" style="margin-top: 15px;">
+                          <h6><i class="material-icons tiny">hotel</i> Проживание:</h6>
+                          <div class="row">
+                            {% for acc in route.accommodations %}
+                            <div class="col s12 m6">
+                              <div class="card-panel grey lighten-4" style="padding: 10px; margin: 5px 0;">
+                                <strong>{{ acc.name }}</strong> ({{ acc.type }})
+                                <p>
+                                  <i class="material-icons tiny">star</i> 
+                                  Рейтинг: {{ acc.rating }}/5
+                                </p>
+                                <p>
+                                  <i class="material-icons tiny">location_on</i> 
+                                  {{ acc.city.name }}, {{ acc.address }}
+                                </p>
+                                <p>
+                                  <i class="material-icons tiny">date_range</i> 
+                                  {{ acc.check_in.strftime('%d.%m.%Y') }} - {{ acc.check_out.strftime('%d.%m.%Y') }}
+                                </p>
+                                <p>
+                                  <i class="material-icons tiny">attach_money</i> 
+                                  {{ acc.price }} руб.
+                                </p>
+                              </div>
+                            </div>
+                            {% else %}
+                            <div class="col s12">
+                              <p>Проживание не забронировано</p>
+                            </div>
+                            {% endfor %}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  {% endfor %}
+                {% else %}
+                  <div class="center-align" style="padding: 40px 0">
+                    <i class="material-icons large grey-text">airplanemode_inactive</i>
+                    <h5>У вас нет активных путешествий</h5>
+                    <p>Начните планировать свое следующее приключение!</p>
+                    <a href="/route/new" class="btn waves-effect waves-light indigo">
+                      <i class="material-icons left">add</i>
+                      Создать путешествие
+                    </a>
+                  </div>
+                {% endif %}
+              </div>
+              <!-- Архив путешествий -->
+              <div id="completed-travels" class="col s12">
+                {% if completed_routes %}
+                  <div class="row">
+                    {% for route in completed_routes %}
+                      <div class="col s12">
+                        <div class="card hoverable">
+                          <div class="card-content">
+                            <div class="section" style="margin-top: 15px;">
+                              <h6><i class="material-icons tiny">group</i> Участники:</h6>
+                              {% if route.users %}
+                                <ul class="collection">
+                                  {% for user in route.users %}
+                                    {% if user.user_id == current_user_id %}Вы{% else %}{{ user.fio }}{% endif %}{% if not loop.last %}, {% endif %}
+                                  {% endfor %}
+                                </ul>
+                              {% else %}
+                                <p>Нет участников</p>
+                              {% endif %}
+                            </div>
+                            <span class="card-title">
+                              <i class="material-icons small green-text">check_circle</i>
+                              {{ route.destination_city }}
+                            </span>
+                            <p><i class="material-icons tiny">date_range</i> {{ route.start_time.strftime('%d.%m.%Y') }}</p>
+                            <p><i class="material-icons tiny">directions_transit</i> {{ route.transport }}</p>
+                            <p><i class="material-icons tiny">attach_money</i>Стоимость: {{ route.cost }} руб.</p>
+                            <!-- Раздел с развлечениями -->
+                            <div class="section" style="margin-top: 15px;">
+                              <h6><i class="material-icons tiny">local_activity</i> Развлечения:</h6>
+                              <div class="row">
+                                {% for ent in route.entertainments %}
+                                <div class="col s12 m6">
+                                  <div class="card-panel grey lighten-4" style="padding: 10px; margin: 5px 0;">
+                                    <strong>{{ ent.event_name }}</strong>
+                                    <p>
+                                      <i class="material-icons tiny">location_on</i> 
+                                      {{ ent.city.name }}, {{ ent.address }}
+                                    </p>
+                                    <p>
+                                      <i class="material-icons tiny">access_time</i> 
+                                      {{ ent.event_time.strftime('%d.%m.%Y %H:%M') }} ({{ ent.duration }})
+                                    </p>
+                                  </div>
+                                </div>
+                                {% else %}
+                                <div class="col s12">
+                                  <p>Нет запланированных развлечений</p>
+                                </div>
+                                {% endfor %}
+                              </div>
+                            </div>
+                    
+                            <!-- Раздел с проживанием -->
+                            <div class="section" style="margin-top: 15px;">
+                              <h6><i class="material-icons tiny">hotel</i> Проживание:</h6>
+                              <div class="row">
+                                {% for acc in route.accommodations %}
+                                <div class="col s12 m6">
+                                  <div class="card-panel grey lighten-4" style="padding: 10px; margin: 5px 0;">
+                                    <strong>{{ acc.name }}</strong> ({{ acc.type }})
+                                    <p>
+                                      <i class="material-icons tiny">star</i> 
+                                      Рейтинг: {{ acc.rating }}/5
+                                    </p>
+                                    <p>
+                                      <i class="material-icons tiny">location_on</i> 
+                                      {{ acc.city.name }}, {{ acc.address }}
+                                    </p>
+                                    <p>
+                                      <i class="material-icons tiny">date_range</i> 
+                                      {{ acc.check_in.strftime('%d.%m.%Y') }} - {{ acc.check_out.strftime('%d.%m.%Y') }}
+                                    </p>
+                                    <p>
+                                      <i class="material-icons tiny">attach_money</i> 
+                                      {{ acc.price }} руб.
+                                    </p>
+                                  </div>
+                                </div>
+                                {% else %}
+                                <div class="col s12">
+                                  <p>Проживание не забронировано</p>
+                                </div>
+                                {% endfor %}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    {% endfor %}
+                  </div>
+                {% else %}
+                  <div class="no-content">
+                    <i class="material-icons large">inbox</i>
+                    <h5>Архив пуст</h5>
+                    <p>Здесь будут завершенные путешествия</p>
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Инициализация dropdown
+      M.Dropdown.init(document.querySelectorAll('.dropdown-trigger'));
+      M.Tabs.init(document.querySelectorAll('.tabs'));
+      // Обработчик выхода
+      $('#logoutLink').on('click', function() {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user_id');
+        sessionStorage.removeItem('auth_token');
+        sessionStorage.removeItem('user_id');
+        window.location.href = '/';
+      });
+      $('#mainLink').on('click', function() {
+        window.location.href = '/profile';
+      });
+    });
+  </script>
+</body>
+</html>

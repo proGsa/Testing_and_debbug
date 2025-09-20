@@ -1,0 +1,191 @@
+
+services:
+  app:
+    build: .
+    image: ppo
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: nastya
+      DB_PASSWORD: nastya
+      DB_NAME: mydb
+      DATABASE_URL: "postgresql://nastya:nastya@db:5432/mydb"
+      MONGO_URI: "mongodb://admin:password@mongodb:27017"
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      mongodb: 
+        condition: service_healthy
+    networks:
+      - my_network
+  tests:
+    build: .
+    image: ppo-tests
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: nastya
+      DB_PASSWORD: nastya
+      DB_NAME: mydb
+      DATABASE_URL: "postgresql://nastya:nastya@db:5432/mydb"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - my_network
+    volumes:
+      - ./allure-results:/app/allure-results
+    command:
+      bash -c "pytest --alluredir=/app/allure-results"
+    
+
+  allure:
+    image: frankescobar/allure-docker-service
+    ports:
+      - "5050:5050"
+    volumes:
+      - ./allure-results:/app/allure-results
+    networks:
+      - my_network
+
+  db:
+    image: postgres:15
+    container_name: postgres_container_test_debug
+    environment:
+      POSTGRES_USER: nastya
+      POSTGRES_PASSWORD: nastya
+      POSTGRES_DB: mydb
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db-init:/docker-entrypoint-initdb.d/
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nastya -d mydb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - my_network
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping').ok", "-u", "admin", "-p", "password", "--quiet"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - my_network
+    restart: unless-stopped 
+
+  tests-sequential:
+    build: .
+    image: ppo-tests
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: nastya
+      DB_PASSWORD: nastya
+      DB_NAME: mydb
+      DATABASE_URL: "postgresql://nastya:nastya@db:5432/mydb"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - my_network
+    command: ["pytest", "tests/service_mock/", "-m", "unit", "-v", "-n", "0"]
+
+  tests-parallel:
+    build: .
+    image: ppo-tests
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: nastya
+      DB_PASSWORD: nastya
+      DB_NAME: mydb
+      DATABASE_URL: "postgresql://nastya:nastya@db:5432/mydb"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - my_network
+    command: ["pytest", "tests/service_mock/", "-m", "unit", "-v", "-n", "auto"]
+
+  tests-by-class:
+    build: .
+    image: ppo-tests
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: nastya
+      DB_PASSWORD: nastya
+      DB_NAME: mydb
+      DATABASE_URL: "postgresql://nastya:nastya@db:5432/mydb"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - my_network
+    command: ["pytest", "tests/service_mock/", "-m", "unit", "-v", "-n", "auto", "--dist=loadscope"]
+
+  tests-by-file:
+    build: .
+    image: ppo-tests
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: nastya
+      DB_PASSWORD: nastya
+      DB_NAME: mydb
+      DATABASE_URL: "postgresql://nastya:nastya@db:5432/mydb"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - my_network
+    command: ["pytest", "tests/service_mock/", "-m", "unit", "-v", "-n", "auto", "--dist=loadfile"]
+  
+  tests-process-analysis:
+    build: .
+    image: ppo-tests
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: nastya
+      DB_PASSWORD: nastya
+      DB_NAME: mydb
+      DATABASE_URL: "postgresql://nastya:nastya@db:5432/mydb"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/app  # Монтируем текущую директорию
+      - ./logs:/app/logs
+    networks:
+      - my_network
+    command: ["python", "analyze_processes.py"]
+
+volumes:
+  postgres_data:
+  mongodb_data:
+  allure-results:
+
+networks:
+  my_network:
+    driver: bridge
