@@ -43,6 +43,13 @@ jobs:
       - name: Install dependencies with Poetry
         run: |
           poetry install --with dev
+          # ЯВНО УСТАНОВИТЕ allure-pytest ДО запуска тестов
+          poetry add allure-pytest --group dev
+
+      - name: Verify allure installation
+        run: |
+          poetry run python -c "import allure; print('Allure version:', allure.__version__)"
+          poetry run python -c "import allure_pytest; print('Allure-pytest imported successfully')"
 
       - name: Run tests with Allure
         run: |
@@ -63,11 +70,7 @@ jobs:
         with:
           name: allure-results
           path: allure-results
-      - name: Install dependencies with Poetry
-        run: |
-          poetry install --with dev
-          # Явно установите allure-pytest
-          poetry add allure-pytest --group dev
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
