@@ -1,0 +1,1 @@
+ERROR    services.directory_route_service:directory_route_service.py:66 Не удалось найти справочник маршрутов по городам 1 и 2

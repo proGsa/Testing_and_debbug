@@ -1,0 +1,1 @@
+ERROR    services.user_service:user_service.py:80 Ошибка регистрации пользователя login: duplicate

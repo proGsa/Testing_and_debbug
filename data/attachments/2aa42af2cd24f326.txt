@@ -1,0 +1,1 @@
+ERROR    services.directory_route_service:directory_route_service.py:58 Не удалось изменить транспорт в справочнике маршрутов 1

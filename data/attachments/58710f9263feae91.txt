@@ -1,0 +1,1 @@
+ERROR    services.travel_service:travel_service.py:94 Ошибка при получении мест проживания для путешествия 1
