@@ -39,17 +39,18 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Install dependencies
-        run: poetry install --with dev
-
-      - name: Check pytest configuration
         run: |
-          # Проверим что в конфигурации
-          cat pyproject.toml | grep -i allure || echo "No allure config found"
-          cat pyproject.toml | grep -i addopts || echo "No addopts found"
+          poetry install --with dev
+          # Явно устанавливаем allure-pytest
+          poetry run pip install allure-pytest
+
+      - name: Verify allure installation
+        run: |
+          poetry run pip list | grep allure
+          poetry run python -c "import allure_pytest; print('Allure-pytest installed successfully')"
 
       - name: Run tests with Allure
         run: |
-          # Временно отключаем конфиг файл чтобы избежать конфликта
           poetry run pytest -c /dev/null --alluredir=allure-results
 
       - name: Upload Allure results
