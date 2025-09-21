@@ -41,8 +41,16 @@ jobs:
       - name: Install dependencies
         run: poetry install --with dev
 
+      - name: Check pytest configuration
+        run: |
+          # Проверим что в конфигурации
+          cat pyproject.toml | grep -i allure || echo "No allure config found"
+          cat pyproject.toml | grep -i addopts || echo "No addopts found"
+
       - name: Run tests with Allure
-        run: poetry run pytest --alluredir=allure-results
+        run: |
+          # Временно отключаем конфиг файл чтобы избежать конфликта
+          poetry run pytest -c /dev/null --alluredir=allure-results
 
       - name: Upload Allure results
         uses: actions/upload-artifact@v4
