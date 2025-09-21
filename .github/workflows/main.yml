@@ -63,7 +63,11 @@ jobs:
         with:
           name: allure-results
           path: allure-results
-
+      - name: Install dependencies with Poetry
+        run: |
+          poetry install --with dev
+          # Явно установите allure-pytest
+          poetry add allure-pytest --group dev
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
