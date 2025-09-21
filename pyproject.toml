@@ -212,8 +212,3 @@ passlib = {extras = ["bcrypt"], version = ">=1.7.4,<2.0.0"}
 bcrypt = "==4.1.2"
 allure-pytest = "^2.13.5"
 
-markers = [
-    "unit: unit tests (use mocks, no internet required)",
-    "integration: integration tests (require database and internet)",
-    "online: tests that require internet connection"
-]
