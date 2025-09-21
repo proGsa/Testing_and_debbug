@@ -97,7 +97,6 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
 .venv
 env/
 venv/
@@ -146,8 +145,6 @@ logs/
 # Database (если используете SQLite и т.д.)
 *.db
 *.sqlite
-
-config.cfg
 
 # Temporary files
 *.tmp
