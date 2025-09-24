@@ -57,9 +57,9 @@ jobs:
         TEST_ENV: unit
 
     - name: Upload unit test results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: unit-test-results
+        name: allure-results
         path: |
           allure-results/unit/
           test-reports/unit-tests.xml
@@ -91,7 +91,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Download unit test results
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: unit-test-results
 
@@ -135,9 +135,9 @@ jobs:
         DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
 
     - name: Upload integration test results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: integration-test-results
+        name:  allure-results
         path: |
           allure-results/integration/
           test-reports/integration-tests.xml
