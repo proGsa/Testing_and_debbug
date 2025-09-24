@@ -101,12 +101,6 @@ jobs:
           poetry install --with dev
           poetry run pip install allure-pytest
 
-      - name: Initialize test database
-        run: |
-          poetry run python scripts/init_test_data.py
-        env:
-          DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
-
       - name: Run integration tests
         run: |
           poetry run pytest tests/integration/ -v \
@@ -116,9 +110,6 @@ jobs:
           DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
           TEST_ENV: integration
 
-      - name: Cleanup test data
-        run: |
-          poetry run python scripts/cleanup_test_data.py
         if: always()
         env:
           DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
