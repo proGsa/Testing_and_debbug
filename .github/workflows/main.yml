@@ -111,8 +111,6 @@ jobs:
           TEST_ENV: integration
 
         if: always()
-        env:
-          DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
 
       - name: Upload integration test results
         uses: actions/upload-artifact@v4
