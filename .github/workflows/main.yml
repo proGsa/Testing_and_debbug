@@ -145,7 +145,7 @@ jobs:
 
   allure-report:
     runs-on: ubuntu-latest
-    needs: tests
+    needs: [unit-tests, integration-tests]
     steps:
       - name: Download Allure results
         uses: actions/download-artifact@v4
