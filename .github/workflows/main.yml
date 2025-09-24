@@ -146,6 +146,11 @@ jobs:
         with:
           name: integration-test-results
           path: allure-results/integration
+      - name: Merge Allure results
+        run: |
+          mkdir -p allure-results/merged
+          cp -r allure-results/unit/* allure-results/merged/
+          cp -r allure-results/integration/* allure-results/merged/
 
       - name: Generate Allure Report
         uses: simple-elf/allure-report-action@v1.8
