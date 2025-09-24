@@ -22,6 +22,7 @@ services:
         condition: service_healthy
     networks:
       - my_network
+      
   test-db:
     image: postgres:15
     container_name: postgres_test

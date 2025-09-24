@@ -50,7 +50,7 @@ jobs:
             --alluredir=allure-results/unit \
             --junitxml=test-reports/unit-tests.xml
         env:
-          DATABASE_URL: postgresql+asyncpg://test_user:test_password@postgres:5432/test_db
+          DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
           TEST_ENV: unit
 
       - name: Upload unit test results
@@ -100,11 +100,11 @@ jobs:
         run: |
           poetry install --with dev
           poetry run pip install allure-pytest
-          
+
       - name: Wait for Postgres
         run: |
           for i in {1..10}; do
-            pg_isready -h postgres -p 5432 -U test_user && break
+            pg_isready -h localhost -p 5432 -U test_user && break
             echo "Waiting for Postgres..."
             sleep 2
           done
@@ -117,7 +117,7 @@ jobs:
             --alluredir=allure-results/integration \
             --junitxml=test-reports/integration-tests.xml
         env:
-          DATABASE_URL: postgresql+asyncpg://test_user:test_password@postgres:5432/test_db
+          DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
           TEST_ENV: integration
 
         if: always()
