@@ -1,1 +1,0 @@
-ERROR    services.accommodation_service:accommodation_service.py:49 Размещение c таким ID 123 не найдено.

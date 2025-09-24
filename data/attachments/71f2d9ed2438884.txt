@@ -1,1 +1,0 @@
-ERROR    services.city_service:city_service.py:31 Город c таким ID 3 уже существует.

@@ -1,1 +1,0 @@
-ERROR    services.accommodation_service:accommodation_service.py:31 Размещение c таким ID 1 уже существует.

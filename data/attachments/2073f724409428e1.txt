@@ -1,1 +1,0 @@
-ERROR    services.travel_service:travel_service.py:62 Путешествия по параметрам {'status': 'Несуществующий статус'} не найдены

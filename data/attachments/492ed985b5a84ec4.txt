@@ -1,1 +1,0 @@
-ERROR    services.accommodation_service:accommodation_service.py:40 Размещение c таким ID 1 не найдено.

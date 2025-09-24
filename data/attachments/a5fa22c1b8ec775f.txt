@@ -1,1 +1,0 @@
-ERROR    services.user_service:user_service.py:64 Пользователь с ID 122 не найден.

@@ -1,1 +1,0 @@
-ERROR    services.route_service:route_service.py:70 Не удалось удалить город 2 из маршрута

@@ -1,1 +1,0 @@
-ERROR    services.directory_route_service:directory_route_service.py:49 Не удалось удалить справочник маршрутов с ID 123

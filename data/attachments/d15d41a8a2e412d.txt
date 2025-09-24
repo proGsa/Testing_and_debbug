@@ -1,1 +1,0 @@
-ERROR    services.travel_service:travel_service.py:54 Путешествие с ID 999 не найдено.

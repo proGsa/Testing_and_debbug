@@ -1,1 +1,0 @@
-ERROR    services.travel_service:travel_service.py:118 Ошибка при связывании мест проживания [1, 2, 3] с путешествием 1

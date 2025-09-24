@@ -1,1 +1,0 @@
-ERROR    services.travel_service:travel_service.py:36 Путешествие c таким ID 1 уже существует.

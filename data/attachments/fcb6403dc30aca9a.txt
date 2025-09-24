@@ -1,1 +1,0 @@
-ERROR    services.user_service:user_service.py:55 Пользователь с ID 1 не найден.
