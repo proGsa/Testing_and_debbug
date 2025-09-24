@@ -146,6 +146,7 @@ jobs:
         with:
           name: integration-test-results
           path: allure-results/integration
+
       - name: Merge Allure results
         run: |
           mkdir -p allure-results/merged
@@ -155,7 +156,7 @@ jobs:
       - name: Generate Allure Report
         uses: simple-elf/allure-report-action@v1.8
         with:
-          allure_results: allure-results
+          allure_results: allure-results/merged
           allure_report: allure-report
           allure_history: allure-history
 
