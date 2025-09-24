@@ -50,7 +50,7 @@ jobs:
             --alluredir=allure-results/unit \
             --junitxml=test-reports/unit-tests.xml
         env:
-          DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
+          DATABASE_URL: postgresql+asyncpg://test_user:test_password@test-db:5432/test_db
           TEST_ENV: unit
 
       - name: Upload unit test results
@@ -107,7 +107,7 @@ jobs:
             --alluredir=allure-results/integration \
             --junitxml=test-reports/integration-tests.xml
         env:
-          DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
+          DATABASE_URL: postgresql+asyncpg://test_user:test_password@test-db:5432/test_db
           TEST_ENV: integration
 
         if: always()
