@@ -114,6 +114,7 @@ async def test_should_succesfull_get_existed_city_by_id() -> None:
     assert result == city
     repository.get_by_id.assert_awaited_once_with(1)
 
+
 @pytest.mark.asyncio
 async def test_service_should_call_get_by_id_on_repository() -> None:
     repository = Mock(spec=CityRepository)
@@ -124,6 +125,7 @@ async def test_service_should_call_get_by_id_on_repository() -> None:
     await city_service.get_by_id(1)
 
     repository.get_by_id.assert_awaited_once_with(1)
+
 
 @pytest.mark.asyncio
 async def test_service_should_throw_exception_at_get_not_existed_city() -> None:

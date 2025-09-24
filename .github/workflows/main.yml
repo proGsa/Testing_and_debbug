@@ -2,62 +2,146 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
   pull_request:
     branches: [ main ]
 
 jobs:
-  tests:
+  unit-tests:
     runs-on: ubuntu-latest
     env:
       PYTHONPATH: ${{ github.workspace }}/src
+      
     services:
-      postgres:
+      postgres-test:
         image: postgres:15
         env:
-          POSTGRES_USER: nastya
-          POSTGRES_PASSWORD: nastya
-          POSTGRES_DB: mydb
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U nastya -d mydb"
+          --health-cmd="pg_isready -U test_user -d test_db"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=5
+          
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.13'
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+
+    - name: Install dependencies
+      run: poetry install --with dev
+
+    - name: Run unit tests
+      run: |
+        source .venv/bin/activate
+        pytest tests/unit/ -v \
+          --alluredir=allure-results/unit \
+          --junitxml=test-reports/unit-tests.xml
+      env:
+        DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
+        TEST_ENV: unit
+
+    - name: Upload unit test results
+      uses: actions/upload-artifact@v3
+      with:
+        name: unit-test-results
+        path: |
+          allure-results/unit/
+          test-reports/unit-tests.xml
+      if: always()
+  integration-tests:
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    if: needs.unit-tests.result == 'success'
+    env:
+      PYTHONPATH: ${{ github.workspace }}/src
+      
+    services:
+      postgres-test:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U test_user -d test_db"
           --health-interval=5s
           --health-timeout=5s
           --health-retries=5
 
     steps:
-      - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
+    - name: Download unit test results
+      uses: actions/download-artifact@v3
+      with:
+        name: unit-test-results
 
-      - name: Install Poetry
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.13'
 
-      - name: Install dependencies
-        run: |
-          poetry install --with dev
-          # Явно устанавливаем allure-pytest
-          poetry run pip install allure-pytest
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        virtualenvs-create: true
+        virtualenvs-in-project: true
 
-      - name: Verify allure installation
-        run: |
-          poetry run pip list | grep allure
-          poetry run python -c "import allure_pytest; print('Allure-pytest installed successfully')"
+    - name: Install dependencies
+      run: poetry install --with dev
 
-      - name: Run tests with Allure
-        run: |
-          poetry run pytest -c /dev/null --alluredir=allure-results
+    - name: Initialize test database
+      run: |
+        source .venv/bin/activate
+        python scripts/init_test_data.py
+      env:
+        DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
 
-      - name: Upload Allure results
-        uses: actions/upload-artifact@v4
-        with:
-          name: allure-results
-          path: allure-results
+    - name: Run integration tests
+      run: |
+        source .venv/bin/activate
+        pytest tests/integration/ -v \
+          --alluredir=allure-results/integration \
+          --junitxml=test-reports/integration-tests.xml
+      env:
+        DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
+        TEST_ENV: integration
+
+    - name: Cleanup test data
+      run: |
+        source .venv/bin/activate
+        python scripts/cleanup_test_data.py
+      if: always()
+      env:
+        DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
+
+    - name: Upload integration test results
+      uses: actions/upload-artifact@v3
+      with:
+        name: integration-test-results
+        path: |
+          allure-results/integration/
+          test-reports/integration-tests.xml
+      if: always()
 
   allure-report:
     runs-on: ubuntu-latest

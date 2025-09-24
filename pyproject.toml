@@ -137,6 +137,7 @@ ignore = [
     "ERA001",
     "RUF001",
     "RUF029",
+    "RUF003",
     "B904",   # just ignore use 'raise ... from err'
     "B905",   # just ingore use explicit 'strict=' parameter with 'zip()'
     "N818",   # just ignore Exception name should be named with an Error suffix
