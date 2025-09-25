@@ -1,0 +1,1 @@
+ERROR    services.user_service:user_service.py:38 Администратора с логином login уже существует.

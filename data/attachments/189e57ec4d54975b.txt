@@ -1,0 +1,1 @@
+ERROR    services.entertainment_service:entertainment_service.py:27 Развлечение c таким ID 1 уже существует.

@@ -1,0 +1,1 @@
+ERROR    services.city_service:city_service.py:40 Город с ID 1 не найден.
