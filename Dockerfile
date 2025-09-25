@@ -30,7 +30,7 @@ RUN apt-get update && apt-get install -y curl unzip \
 && tar -zxvf allure-2.27.0.tgz -C /opt/ \
 && ln -s /opt/allure-2.27.0/bin/allure /usr/local/bin/allure \
 && rm allure-2.27.0.tgz
-# Копируем остальной проект
+
 COPY . .
 COPY ./analyze_processes.py .
 
@@ -51,12 +51,12 @@ COPY --from=builder /opt/allure-2.27.0 /opt/allure-2.27.0
 # Копируем Poetry
 COPY --from=builder /opt/poetry /opt/poetry
 
-# Копируем исходный код
+
 COPY . .
 
 # Линтинг и типизация
-RUN poetry run ruff check --fix ./src
-RUN poetry run mypy ./src
+RUN poetry run ruff check --fix ./src ./tests
+RUN poetry run mypy ./src ./tests
 
-# Запуск приложения
+
 CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]

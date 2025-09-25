@@ -138,11 +138,9 @@ cython_debug/
 app/allure-results/
 allure-results/
 
-# Logs (ОЧЕНЬ ВАЖНО)
 logs/
 *.log
 
-# Database (если используете SQLite и т.д.)
 *.db
 *.sqlite
 

@@ -2,34 +2,37 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
   pull_request:
     branches: [ main ]
 
 jobs:
-  tests:
+  unit-tests:
     runs-on: ubuntu-latest
     env:
       PYTHONPATH: ${{ github.workspace }}/src
+
     services:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_USER: nastya
-          POSTGRES_PASSWORD: nastya
-          POSTGRES_DB: mydb
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U nastya -d mydb"
+          --health-cmd="pg_isready -U test_user -d test_db"
           --health-interval=5s
           --health-timeout=5s
           --health-retries=5
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.13"
 
@@ -41,43 +44,214 @@ jobs:
       - name: Install dependencies
         run: |
           poetry install --with dev
-          # Явно устанавливаем allure-pytest
           poetry run pip install allure-pytest
 
-      - name: Verify allure installation
+      - name: Create directories for test results
         run: |
-          poetry run pip list | grep allure
-          poetry run python -c "import allure_pytest; print('Allure-pytest installed successfully')"
+          mkdir -p allure-results/unit
+          mkdir -p test-reports
 
-      - name: Run tests with Allure
+      - name: Debug directory structure
         run: |
-          poetry run pytest -c /dev/null --alluredir=allure-results
+          echo "Current directory:"
+          pwd
+          echo "Directory contents:"
+          ls -la
+          echo "Tests directory:"
+          ls -la tests/ || echo "No tests directory"
 
-      - name: Upload Allure results
+      - name: Run unit tests
+        run: |
+          poetry run pytest tests/unit/ -v \
+            --alluredir=allure-results/unit \
+            --junitxml=test-reports/unit-tests.xml
+        env:
+          DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
+          TEST_ENV: unit
+
+      - name: Check if Allure results were generated
+        run: |
+          echo "Checking Allure results directory:"
+          ls -la allure-results/unit/ || echo "No Allure results found"
+          echo "Checking test reports directory:"
+          ls -la test-reports/ || echo "No test reports found"
+
+      - name: Upload unit test results
         uses: actions/upload-artifact@v4
         with:
-          name: allure-results
-          path: allure-results
+          name: unit-test-results
+          path: |
+            allure-results/unit/
+            test-reports/unit-tests.xml
+        if: always()
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    if: needs.unit-tests.result == 'success'
+    env:
+      PYTHONPATH: ${{ github.workspace }}/src
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U test_user -d test_db"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: |
+          poetry install --with dev
+          poetry run pip install allure-pytest
+
+      - name: Create directories for test results
+        run: |
+          mkdir -p allure-results/integration
+          mkdir -p test-reports
+
+      - name: Wait for Postgres
+        run: |
+          for i in {1..10}; do
+            pg_isready -h localhost -p 5432 -U test_user -d test_db && break
+            echo "Waiting for Postgres... attempt $i"
+            sleep 2
+          done
+        env:
+          PGPASSWORD: test_password
+
+      - name: Run integration tests
+        run: |
+          poetry run pytest tests/integration/ -v \
+            --alluredir=allure-results/integration \
+            --junitxml=test-reports/integration-tests.xml
+        env:
+          DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
+          TEST_ENV: integration
+
+      - name: Check if Allure results were generated
+        run: |
+          echo "Checking Allure results directory:"
+          ls -la allure-results/integration/ || echo "No Allure results found"
+          echo "Checking test reports directory:"
+          ls -la test-reports/ || echo "No test reports found"
+
+      - name: Upload integration test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: |
+            allure-results/integration/
+            test-reports/integration-tests.xml
+        if: always()
 
   allure-report:
     runs-on: ubuntu-latest
-    needs: tests
+    needs: [unit-tests, integration-tests]
+    if: always()
+    
     steps:
-      - name: Download Allure results
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python (for Allure)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install Allure
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y default-jre
+          wget https://github.com/allure-framework/allure2/releases/download/2.27.0/allure-2.27.0.tgz
+          tar -zxvf allure-2.27.0.tgz
+          sudo mv allure-2.27.0 /opt/allure
+          sudo ln -s /opt/allure/bin/allure /usr/local/bin/allure
+
+      - name: Download unit test results
         uses: actions/download-artifact@v4
         with:
-          name: allure-results
-          path: allure-results
+          name: unit-test-results
+          path: downloaded-artifacts/unit
+
+      - name: Download integration test results
+        uses: actions/download-artifact@v4
+        with:
+          name: integration-test-results
+          path: downloaded-artifacts/integration
+
+      - name: Check downloaded artifacts
+        run: |
+          echo "Downloaded artifacts structure:"
+          find downloaded-artifacts -type f -name "*.xml" -o -name "*.json" | head -20
+          echo "Unit test results:"
+          ls -la downloaded-artifacts/unit/ || echo "No unit results"
+          echo "Integration test results:"
+          ls -la downloaded-artifacts/integration/ || echo "No integration results"
+
+      - name: Merge Allure results
+        run: |
+          mkdir -p merged-allure-results
+          
+          # Копируем результаты unit тестов
+          if [ -d "downloaded-artifacts/unit/allure-results/unit" ]; then
+            cp -r downloaded-artifacts/unit/allure-results/unit/* merged-allure-results/ || true
+          fi
+          
+          # Копируем результаты integration тестов
+          if [ -d "downloaded-artifacts/integration/allure-results/integration" ]; then
+            cp -r downloaded-artifacts/integration/allure-results/integration/* merged-allure-results/ || true
+          fi
+          
+          # Альтернативный путь для результатов
+          if [ -d "downloaded-artifacts/unit" ]; then
+            find downloaded-artifacts/unit -name "*.json" -exec cp {} merged-allure-results/ \; || true
+          fi
+          
+          if [ -d "downloaded-artifacts/integration" ]; then
+            find downloaded-artifacts/integration -name "*.json" -exec cp {} merged-allure-results/ \; || true
+          fi
+          
+          echo "Merged Allure results:"
+          ls -la merged-allure-results/ || echo "No merged results"
 
       - name: Generate Allure Report
-        uses: simple-elf/allure-report-action@v1.8
-        with:
-          allure_results: allure-results
-          allure_report: allure-report
-          allure_history: allure-history
+        run: |
+          # Проверяем, есть ли файлы для генерации отчета
+          if [ "$(ls -A merged-allure-results/ 2>/dev/null)" ]; then
+            echo "Generating Allure report from test results..."
+            allure generate merged-allure-results/ -o allure-report --clean
+            echo "Allure report generated successfully"
+          else
+            echo "No test results found for Allure report generation"
+            # Создаем заглушку для отчета
+            mkdir -p allure-report
+            echo "<html><body><h1>No test results available</h1></body></html>" > allure-report/index.html
+          fi
 
       - name: Deploy Allure Report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: ${{ secrets.GH_PAT }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: allure-report

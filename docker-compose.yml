@@ -22,26 +22,67 @@ services:
         condition: service_healthy
     networks:
       - my_network
-  tests:
-    build: .
-    image: ppo-tests
+      
+  test-db:
+    image: postgres:15
+    container_name: postgres_test
     environment:
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_USER: nastya
-      DB_PASSWORD: nastya
-      DB_NAME: mydb
-      DATABASE_URL: "postgresql://nastya:nastya@db:5432/mydb"
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: test_db
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+      - ./db-init:/docker-entrypoint-initdb.d/
+    ports:
+      - "5435:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user -d test_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - my_network
+  
+  unit-tests:
+    build: .
+    container_name: unit_tests_runner
+    environment:
+      DATABASE_URL: "postgresql+asyncpg://test_user:test_password@test-db:5432/test_db"
+      TEST_ENV: "unit"
+    volumes:
+      - ./allure-results:/app/allure-results
+      - ./test-reports:/app/test-reports
     depends_on:
-      db:
+      test-db:
         condition: service_healthy
     networks:
       - my_network
+    command: >
+      sh -c "
+        pytest tests/unit/ -v --alluredir=/app/allure-results/unit"
+    profiles: ["test"]
+
+  integration-tests:
+    build: .
+    container_name: integration_tests_runner
+    environment:
+      DATABASE_URL: "postgresql+asyncpg://test_user:test_password@test-db:5432/test_db"
+      TEST_ENV: "integration"
     volumes:
       - ./allure-results:/app/allure-results
-    command:
-      bash -c "pytest --alluredir=/app/allure-results"
-    
+      - ./test-reports:/app/test-reports
+    depends_on:
+      test-db:
+        condition: service_healthy
+      unit-tests:
+        condition: service_completed_successfully
+    networks:
+      - my_network
+    command: >
+      sh -c "
+        pytest tests/integration/ -v --alluredir=/app/allure-results/integration"
+    profiles: ["test"]
 
   allure:
     image: frankescobar/allure-docker-service
@@ -75,7 +116,7 @@ services:
 
   mongodb:
     image: mongo:latest
-    container_name: mongodb
+    container_name: mongodb_web
     ports:
       - "27017:27017"
     volumes:
@@ -93,96 +134,9 @@ services:
       - my_network
     restart: unless-stopped 
 
-  tests-sequential:
-    build: .
-    image: ppo-tests
-    environment:
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_USER: nastya
-      DB_PASSWORD: nastya
-      DB_NAME: mydb
-      DATABASE_URL: "postgresql://nastya:nastya@db:5432/mydb"
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - my_network
-    command: ["pytest", "tests/service_mock/", "-m", "unit", "-v", "-n", "0"]
-
-  tests-parallel:
-    build: .
-    image: ppo-tests
-    environment:
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_USER: nastya
-      DB_PASSWORD: nastya
-      DB_NAME: mydb
-      DATABASE_URL: "postgresql://nastya:nastya@db:5432/mydb"
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - my_network
-    command: ["pytest", "tests/service_mock/", "-m", "unit", "-v", "-n", "auto"]
-
-  tests-by-class:
-    build: .
-    image: ppo-tests
-    environment:
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_USER: nastya
-      DB_PASSWORD: nastya
-      DB_NAME: mydb
-      DATABASE_URL: "postgresql://nastya:nastya@db:5432/mydb"
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - my_network
-    command: ["pytest", "tests/service_mock/", "-m", "unit", "-v", "-n", "auto", "--dist=loadscope"]
-
-  tests-by-file:
-    build: .
-    image: ppo-tests
-    environment:
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_USER: nastya
-      DB_PASSWORD: nastya
-      DB_NAME: mydb
-      DATABASE_URL: "postgresql://nastya:nastya@db:5432/mydb"
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - my_network
-    command: ["pytest", "tests/service_mock/", "-m", "unit", "-v", "-n", "auto", "--dist=loadfile"]
-  
-  tests-process-analysis:
-    build: .
-    image: ppo-tests
-    environment:
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_USER: nastya
-      DB_PASSWORD: nastya
-      DB_NAME: mydb
-      DATABASE_URL: "postgresql://nastya:nastya@db:5432/mydb"
-    depends_on:
-      db:
-        condition: service_healthy
-    volumes:
-      - .:/app  # Монтируем текущую директорию
-      - ./logs:/app/logs
-    networks:
-      - my_network
-    command: ["python", "analyze_processes.py"]
-
 volumes:
   postgres_data:
+  postgres_test_data:
   mongodb_data:
   allure-results:
 
