@@ -223,10 +223,28 @@ jobs:
           nohup poetry run uvicorn src.main:app --host 0.0.0.0 --port 8000 &
           sleep 5
 
-      - name: Check test user in DB
+      - name: Diagnostic checks before tests
         run: |
-          psql postgresql://nastya:nastya@localhost:5432/mydb -c "SELECT login, password FROM travel_db.users LIMIT 5;"
-
+          echo "=== Pre-test Diagnostics ==="
+          
+          # 1. Проверим базу данных
+          echo "1. Database check:"
+          psql postgresql://nastya:nastya@localhost:5432/mydb -c "
+            SELECT current_database();
+            SELECT schema_name FROM information_schema.schemata WHERE schema_name = 'travel_db';
+            SELECT table_name FROM information_schema.tables WHERE table_schema = 'travel_db';
+          "
+          
+          # 2. Проверим приложение
+          echo "2. Application check:"
+          curl -v http://localhost:8000/health
+          curl -v http://localhost:8000/docs || echo "Docs not available"
+          
+          # 3. Проверим login endpoint
+          echo "3. Login endpoint check:"
+          curl -X POST http://localhost:8000/api/login \
+              -H "Content-Type: application/json" \
+              -d '{"login":"admin1","password":"123!e5T78"}' -v || echo "Login endpoint test"
       - name: Run e2e tests
         run: |
           poetry run pytest tests/e2e/ -v \
