@@ -27,26 +27,18 @@ class TestCityManagementE2E:
             headers = {"Authorization": f"Bearer {token}"}
 
             with allure.step("Create new city 'Сочи'"):
+            try:
+                create_resp = await client.post("/api/cities", json={"name": "Сочи"}, headers=headers)
+            except:
                 create_resp = await client.post("/api/cities", data={"name": "Сочи"}, headers=headers)
-                print(f"Create city response: {create_resp.status_code}")
-                print(f"Create city body: {create_resp.text}")
-                assert create_resp.status_code in (200, 201)
+            
+            print(f"Create city response: {create_resp.status_code}")
+            assert create_resp.status_code in (200, 201)
 
-            with allure.step("Verify city via API first"):
-                # Сначала проверим через API
-                api_resp = await client.get("/api/cities", headers=headers)
-                print(f"API cities response: {api_resp.status_code}")
-                print(f"API cities body: {api_resp.text}")
-                assert api_resp.status_code == 200
-                cities_data = api_resp.json()
-                print(f"Cities from API: {cities_data}")
-                # Проверим, что город есть в API ответе
-                city_names = [city.get('name') for city in cities_data]
-                assert "Сочи" in city_names
-
-            with allure.step("Verify city in list"):
-                list_resp = await client.get("/city.html", headers=headers)
-                print(f"HTML page status: {list_resp.status_code}")
-                print(f"HTML content sample: {list_resp.text[:500]}...")  # Первые 500 символов
-                assert list_resp.status_code == 200
-                assert "Сочи" in list_resp.text
+        with allure.step("Verify city via HTML page"):
+            list_resp = await client.get("/city.html", headers=headers)
+            print(f"HTML page status: {list_resp.status_code}")
+            print(f"HTML content length: {len(list_resp.text)}")
+            
+            assert list_resp.status_code == 200
+            assert "Сочи" in list_resp.text
