@@ -19,7 +19,7 @@ class TestCityManagementE2E:
                 login_data = {"login": "admin1", "password": "123!e5T78"}
 
             with allure.step("Send login request"):
-                resp = await client.post("/api/login", json=login_data)
+                resp = await client.post("/login", json=login_data)
                 assert resp.status_code == 200
                 token = resp.json().get("access_token")
                 assert token

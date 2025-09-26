@@ -242,7 +242,7 @@ jobs:
           
           # 3. Проверим login endpoint
           echo "3. Login endpoint check:"
-          curl -X POST http://localhost:8000/api/login \
+          curl -X POST http://localhost:8000/login \
               -H "Content-Type: application/json" \
               -d '{"login":"admin1","password":"123!e5T78"}' -v || echo "Login endpoint test"
       - name: Run e2e tests
