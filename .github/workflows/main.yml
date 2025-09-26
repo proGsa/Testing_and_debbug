@@ -229,21 +229,9 @@ jobs:
 
       - name: Run e2e tests
         run: |
-          if [ "${{ needs.integration-tests.result }}" != "success" ]; then
-            echo "Integration tests failed, running skipped test for E2E"
-            mkdir -p tests/e2e
-            echo "import pytest
-            @pytest.mark.skip(reason='Integration tests failed, E2E skipped')
-            def test_skipped(): pass
-            " > tests/e2e/skipped_e2e.py
-            poetry run pytest tests/e2e/skipped_e2e.py -v \
-              --alluredir=allure-results/e2e \
-              --junitxml=test-reports/e2e-tests.xml
-          else
-            poetry run pytest tests/e2e/ -v \
-              --alluredir=allure-results/e2e \
-              --junitxml=test-reports/e2e-tests.xml
-          fi
+          poetry run pytest tests/e2e/ -v \
+            --alluredir=allure-results/e2e \
+            --junitxml=test-reports/e2e-tests.xml
         env:
           DATABASE_URL: postgresql+asyncpg://nastya:nastya@localhost:5432/mydb
           BASE_URL: http://localhost:8000
