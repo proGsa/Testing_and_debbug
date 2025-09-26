@@ -66,7 +66,7 @@ async def handle_exceptions(request: Request, exc: Exception) -> JSONResponse:
 @app.on_event("startup")
 async def startup() -> None:
     logger.info("Запуск приложения")
-    await async_init_mongodb()
+    # await async_init_mongodb()
 
 
 @app.on_event("shutdown")

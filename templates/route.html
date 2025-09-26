@@ -174,7 +174,7 @@
                             class="modal-trigger travel-link"
                             data-id="{{ route.travel.id }}"
                             data-status="{{ route.travel.status }}"
-                            data-user="{{ route.travel.user.fio }}"
+                            data-users="{{ route.travel.users | map(attribute='fio') | join(', ') }}"
                             data-entertainments='{{ route.travel.entertainments | tojson }}'
                             data-accommodations='{{ route.travel.accommodations | tojson }}'>
                             Путешествие #{{ route.travel.id }}
@@ -535,7 +535,7 @@
     $('.travel-link').on('click', function() {
         const id = $(this).data('id');
         const status = $(this).data('status');
-        const user = $(this).data('user');
+        const user = $(this).data('users');
         const entertainments = JSON.parse($(this).attr('data-entertainments'));
         const accommodations = JSON.parse($(this).attr('data-accommodations'));
         console.log("Все развлечения:", entertainments);

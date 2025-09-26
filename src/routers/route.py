@@ -62,45 +62,72 @@ async def get_route_page(request: Request, service_locator: ServiceLocator = get
 async def get_all_route(request: Request, service_locator: ServiceLocator = get_sl_dep) -> HTMLResponse:
     route_list = await service_locator.get_route_contr().get_all_routes()
     routes = route_list.get("routes", [])
-    
+    user = None
+
     for route in routes:
         route['start_time'] = datetime.fromisoformat(route['start_time'])
         route['end_time'] = datetime.fromisoformat(route['end_time'])
         
         if route.get('travel'):
             travel = route['travel']
-            
-            if 'entertainments' in travel:
-                for ent in travel['entertainments']:
-                    if hasattr(ent.get('city'), 'name'): 
-                        ent['city_name'] = ent['city'].name
-                    elif isinstance(ent.get('city'), dict): 
-                        ent['city_name'] = ent['city'].get('name', 'Не указан')
-                    elif 'city_id' in ent: 
-                        city = await service_locator.get_city_serv().get_by_id(ent['city_id'])
-                        ent['city_name'] = city.name if city else 'Не указан'
-                    else:
-                        ent['city_name'] = 'Не указан'
-            
-            if 'accommodations' in travel:
-                for acc in travel['accommodations']:
-                    if hasattr(acc.get('city'), 'name'):  
-                        acc['city_name'] = acc['city'].name
-                    elif isinstance(acc.get('city'), dict): 
-                        acc['city_name'] = acc['city'].get('name', 'Не указан')
-                    elif 'city_id' in acc: 
-                        city = await service_locator.get_city_serv().get_by_id(acc['city_id'])
-                        acc['city_name'] = city.name if city else 'Не указан'
-                    else:
-                        acc['city_name'] = 'Не указан'
-    
+            serialized_ents = []
+            for ent in travel['entertainments']:
+                city_name = None
+                if hasattr(ent.get('city'), 'name'):
+                    city_name = ent['city'].name
+                elif isinstance(ent.get('city'), dict):
+                    city_name = ent['city'].get('name', 'Не указан')
+                elif 'city_id' in ent:
+                    city = await service_locator.get_city_serv().get_by_id(ent['city_id'])
+                    city_name = city.name if city else 'Не указан'
+                else:
+                    city_name = 'Не указан'
+
+                serialized_ents.append({
+                    "id": ent.get("id"),
+                    "event_name": ent.get("event_name"),
+                    "address": ent.get("address"),
+                    "duration": ent.get("duration"),
+                    "event_time": ent.get("event_time"),
+                    "city_name": city_name
+                })
+            travel['entertainments'] = serialized_ents
+        
+        if 'accommodations' in travel:
+            serialized_accs = []
+            for acc in travel['accommodations']:
+                city_name = None
+                if hasattr(acc.get('city'), 'name'):
+                    city_name = acc['city'].name
+                elif isinstance(acc.get('city'), dict):
+                    city_name = acc['city'].get('name', 'Не указан')
+                elif 'city_id' in acc:
+                    city = await service_locator.get_city_serv().get_by_id(acc['city_id'])
+                    city_name = city.name if city else 'Не указан'
+                else:
+                    city_name = 'Не указан'
+
+                serialized_accs.append({
+                    "id": acc.get("id"),
+                    "name": acc.get("name"),
+                    "type": acc.get("type"),
+                    "address": acc.get("address"),
+                    "price": acc.get("price"),
+                    "rating": acc.get("rating"),
+                    "check_in": acc.get("check_in"),
+                    "check_out": acc.get("check_out"),
+                    "city_name": city_name
+                })
+            travel['accommodations'] = serialized_accs
+
     return templates.TemplateResponse(
         "route.html",
         {
             "request": request,
-            "routes": jsonable_encoder(routes),
+            "routes": routes,
             "travels": await service_locator.get_travel_serv().get_all_travels(),
-            "d_routes": await service_locator.get_d_route_serv().get_list()
+            "d_routes": await service_locator.get_d_route_serv().get_list(),
+            "user": user
         }
     )
 

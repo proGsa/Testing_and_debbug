@@ -114,6 +114,7 @@ class UserController:
                 "token_type": "bearer",
                 "user_id": user.user_id, 
                 "user_login": user.login,
+                "is_admin": user.is_admin,
                 "message": "Login successfully"
             }
         except Exception as e:

@@ -25,7 +25,7 @@ services:
       
   test-db:
     image: postgres:15
-    container_name: postgres_test
+    container_name: test-db
     environment:
       POSTGRES_USER: test_user
       POSTGRES_PASSWORD: test_password
@@ -58,9 +58,7 @@ services:
         condition: service_healthy
     networks:
       - my_network
-    command: >
-      sh -c "
-        pytest tests/unit/ -v --alluredir=/app/allure-results/unit"
+    command: ["pytest", "tests/unit/", "-v", "--alluredir=/app/allure-results/unit"]
     profiles: ["test"]
 
   integration-tests:
@@ -81,7 +79,30 @@ services:
       - my_network
     command: >
       sh -c "
-        pytest tests/integration/ -v --alluredir=/app/allure-results/integration"
+        poetry run pytest tests/integration/ -v --alluredir=/app/allure-results/integration"
+    profiles: ["test"]
+
+  e2e-tests:
+    build: .
+    container_name: e2e_tests_runner
+    environment:
+      DATABASE_URL: "postgresql+asyncpg://nastya:nastya@db:5432/mydb"
+      MONGO_URI: "mongodb://admin:password@mongodb:27017"
+      TEST_ENV: "e2e"
+      BASE_URL: "http://app:8000"
+    volumes:
+      - ./allure-results:/app/allure-results
+      - ./test-reports:/app/test-reports
+    depends_on:
+      app:
+        condition: service_healthy
+      integration-tests:
+        condition: service_completed_successfully
+    networks:
+      - my_network
+    command: >
+      sh -c "
+        poetry run pytest tests/e2e/ -v --alluredir=/app/allure-results/e2e"
     profiles: ["test"]
 
   allure:
@@ -116,7 +137,7 @@ services:
 
   mongodb:
     image: mongo:latest
-    container_name: mongodb_web
+    container_name: mongodb_test
     ports:
       - "27017:27017"
     volumes:
@@ -142,4 +163,5 @@ volumes:
 
 networks:
   my_network:
+    # name: test_debug_my_network
     driver: bridge

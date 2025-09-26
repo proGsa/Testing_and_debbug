@@ -8,7 +8,7 @@ INSERT INTO travel_db.city (name) VALUES
 INSERT INTO travel_db.users (full_name, passport, phone, email, login, password, is_admin)
 VALUES 
 ('Лобач Анастасия Олеговна', '1111111111', '89261111111', 'nastya@lobach.info', 'admin1', '$2b$12$OoiH5pmFNbJn4lj77or/9.zJvXcLMND58wxUZgSwc0nHSfme9KvAm', TRUE),
-('Соколов Василий Иванович', '1345678453', '89257891245', 'vas@is.com', 'user1', '$2b$12$lLnWAYc7UhaQgej10SYkFesZULsYY4SKuupswItDNepKccyr4tnp.', FALSE);
+('Соколов Василий Иванович', '1345678453', '89257891245', 'vas@is.com', 'user1', '$2b$12$Pr6Kb9GJDSehLCuReYZpQOLUVVpaPqr/Co30CDklMFKiXdrvOQl5y', FALSE);
 INSERT INTO travel_db.directory_route (type_transport, departure_city, arrival_city, distance, price) VALUES
 ('Автомобиль', 1, 2, 467, 1335),
 ('Автобус', 1, 2, 467, 1335),

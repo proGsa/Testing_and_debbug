@@ -38,7 +38,7 @@ async def get_all_travels(request: Request, service_locator: ServiceLocator = ge
     travels = travel_list.get("travels", [])
     logger.info("Получено %d путешествий", len(travels))
     
-    user_id = travels[0]["user_id"] if travels else None
+    user_id = travels[0]["users"][0]["user_id"] if travels and travels[0]["users"] else None
     user = None
     if user_id is not None:
         logger.info("Получение данных пользователя ID %s", user_id)

@@ -33,6 +33,7 @@ from services.travel_service import TravelService
 from services.user_service import AuthService
 from services.user_service import UserService
 
+from playwright.async_api import async_playwright, Page
 
 @pytest.fixture
 def mock_city_repo() -> Mock:
@@ -87,11 +88,8 @@ async def event_loop() -> AsyncGenerator[asyncio.AbstractEventLoop]:
     loop.close()
 
 
-engine = create_async_engine("postgresql+asyncpg://test_user:test_password@localhost:5432/test_db", echo=True)
-AsyncSessionMaker: async_sessionmaker[AsyncSession] = async_sessionmaker(
-    bind=engine,
-    expire_on_commit=False
-)
+engine = create_async_engine("postgresql+asyncpg://test_user:test_password@test-db:5432/test_db", echo=True)
+AsyncSessionMaker: async_sessionmaker[AsyncSession] = async_sessionmaker(bind=engine, expire_on_commit=False)
 
 
 @pytest_asyncio.fixture(scope="function")
@@ -115,7 +113,7 @@ async def db_session() -> AsyncGenerator[AsyncSession]:
                     city_id SERIAL PRIMARY KEY,
                     name VARCHAR NOT NULL UNIQUE
                 )
-            """))
+                """))
             await session.execute(text("""
                 CREATE TABLE entertainment (
                     id SERIAL PRIMARY KEY,
@@ -125,7 +123,7 @@ async def db_session() -> AsyncGenerator[AsyncSession]:
                     event_time TIMESTAMP NOT NULL,
                     city INTEGER REFERENCES city(city_id) ON DELETE CASCADE
                 )
-            """))
+                """))
             await session.execute(text("""
                 CREATE TABLE IF NOT EXISTS accommodations (
                     id SERIAL PRIMARY KEY,
@@ -138,7 +136,7 @@ async def db_session() -> AsyncGenerator[AsyncSession]:
                     check_out TIMESTAMP NOT NULL, 
                     city INTEGER NOT NULL REFERENCES city(city_id) ON DELETE CASCADE
                 )
-            """))
+                """))
             await session.execute(text("""
                 CREATE TABLE IF NOT EXISTS directory_route (
                     id SERIAL PRIMARY KEY,
@@ -149,7 +147,6 @@ async def db_session() -> AsyncGenerator[AsyncSession]:
                     price INT NOT NULL
                 )
                 """))
-
             await session.execute(text("""
                 CREATE TABLE IF NOT EXISTS users (
                     id SERIAL PRIMARY KEY,
@@ -178,7 +175,6 @@ async def db_session() -> AsyncGenerator[AsyncSession]:
                     CONSTRAINT fk_entertainment_id FOREIGN KEY (entertainment_id) REFERENCES entertainment(id) ON DELETE CASCADE
                 )
                 """))
-
             await session.execute(text("""
                 CREATE TABLE IF NOT EXISTS travel_accommodations (
                     id SERIAL PRIMARY KEY,
@@ -188,7 +184,6 @@ async def db_session() -> AsyncGenerator[AsyncSession]:
                     CONSTRAINT fk_accommodation_id FOREIGN KEY (accommodation_id) REFERENCES accommodations(id) ON DELETE CASCADE
                 )
                 """))
-
             await session.execute(text("""
                 CREATE TABLE IF NOT EXISTS users_travel (
                     id SERIAL PRIMARY KEY,
@@ -222,11 +217,12 @@ async def db_session() -> AsyncGenerator[AsyncSession]:
             await session.execute(text("TRUNCATE travel RESTART IDENTITY CASCADE;"))
             await session.execute(text("TRUNCATE city RESTART IDENTITY CASCADE;"))
             await session.commit()
+            
             await session.execute(text("""
                 INSERT INTO city (name) VALUES 
                 ('Москва'), ('Воронеж'), ('Санкт-Петербург'), 
                 ('Екатеринбург'), ('Калининград')
-            """))
+                """))
             entertainment_data = [
                 {"duration": "4 часа", "address": "Главная площадь", "event_name": "Концерт", 
                                                     "event_time": datetime(2025, 4, 10, 16, 0, 0), "city": 1},
@@ -237,8 +233,7 @@ async def db_session() -> AsyncGenerator[AsyncSession]:
                 await session.execute(text("""
                     INSERT INTO entertainment 
                     (duration, address, event_name, event_time, city) 
-                    VALUES (:duration, :address, :event_name, :event_time, :city)
-                """), data)
+                    VALUES (:duration, :address, :event_name, :event_time, :city)"""), data)
             await session.commit()
             accommodations_data = [
                 {"price": 33450, "address": "ул. Дмитриевского, 7", "name": "ABC",
@@ -417,3 +412,56 @@ async def travel_service(db_session: AsyncSession) -> TravelService:
     accommodation_repo = AccommodationRepository(db_session, city_repo)
     travel_repo = TravelRepository(db_session, user_repo, entertainment_repo, accommodation_repo)
     return TravelService(travel_repo)
+
+
+@pytest.fixture(scope="session")
+async def browser():
+    """Launch browser for E2E tests"""
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(
+            headless=True,
+            args=[
+                "--no-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-gpu",
+                "--disable-web-security"
+            ]
+        )
+        yield browser
+        await browser.close()
+
+@pytest.fixture
+async def page(browser) -> Page:
+    """Create a new page for each test"""
+    context = await browser.new_context(
+        viewport={"width": 1920, "height": 1080},
+        ignore_https_errors=True
+    )
+    page = await context.new_page()
+    
+    # Устанавливаем базовый URL
+    page.set_default_timeout(15000)
+    page.set_default_navigation_timeout(30000)
+    
+    yield page
+    
+    await context.close()
+
+@pytest.fixture
+async def authenticated_page(page: Page):
+    """Create an authenticated page for tests requiring login"""
+    # Логинимся
+    await page.goto("http://app:8000/login")
+    await page.fill('input[name="login"]', "user1")
+    await page.fill('input[name="password"]', "123!e5T78")
+    await page.click('button[type="submit"]')
+    
+    await page.wait_for_url("http://app:8000/**", timeout=10000)
+    
+    yield page
+    
+    try:
+        await page.click('text=Выйти')
+        await page.wait_for_url("http://app:8000/", timeout=5000)
+    except:
+        pass 
