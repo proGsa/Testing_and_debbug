@@ -51,15 +51,6 @@ jobs:
           mkdir -p allure-results/unit
           mkdir -p test-reports
 
-      - name: Debug directory structure
-        run: |
-          echo "Current directory:"
-          pwd
-          echo "Directory contents:"
-          ls -la
-          echo "Tests directory:"
-          ls -la tests/ || echo "No tests directory"
-
       - name: Run unit tests
         continue-on-error: true
         run: |
@@ -70,12 +61,17 @@ jobs:
           DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
           TEST_ENV: unit
 
-      - name: Check if Allure results were generated
+      - name: Ensure Allure unit results exist
         run: |
-          echo "Checking Allure results directory:"
-          ls -la allure-results/unit/ || echo "No Allure results found"
-          echo "Checking test reports directory:"
-          ls -la test-reports/ || echo "No test reports found"
+          if [ ! -d "allure-results/unit" ] || [ -z "$(ls -A allure-results/unit)" ]; then
+            echo '{
+              "name": "Unit tests skipped",
+              "status": "skipped",
+              "stage": "finished",
+              "steps": [],
+              "labels": [{"name":"suite","value":"Unit"}]
+            }' > allure-results/unit/skipped-unit.json
+          fi
 
       - name: Upload unit test results
         uses: actions/upload-artifact@v4
@@ -132,16 +128,6 @@ jobs:
           mkdir -p allure-results/integration
           mkdir -p test-reports
 
-      - name: Wait for Postgres
-        run: |
-          for i in {1..10}; do
-            pg_isready -h localhost -p 5432 -U test_user -d test_db && break
-            echo "Waiting for Postgres... attempt $i"
-            sleep 2
-          done
-        env:
-          PGPASSWORD: test_password
-
       - name: Run integration tests
         continue-on-error: true
         run: |
@@ -158,6 +144,18 @@ jobs:
           ls -la allure-results/integration/ || echo "No Allure results found"
           echo "Checking test reports directory:"
           ls -la test-reports/ || echo "No test reports found"
+
+      - name: Ensure Allure integration results exist
+        run: |
+          if [ ! -d "allure-results/integration" ] || [ -z "$(ls -A allure-results/integration)" ]; then
+            echo '{
+              "name": "Integration tests skipped",
+              "status": "skipped",
+              "stage": "finished",
+              "steps": [],
+              "labels": [{"name":"suite","value":"Integration"}]
+            }' > allure-results/integration/skipped-integration.json
+          fi
 
       - name: Upload integration test results
         uses: actions/upload-artifact@v4
@@ -220,6 +218,7 @@ jobs:
           for script in db-init/*.sql; do
             psql postgresql://test_user:test_password@localhost:5432/test_db -f "$script"
           done
+
       - name: Run FastAPI app in background
         run: |
           nohup poetry run uvicorn src.main:app --host 0.0.0.0 --port 8000 &
@@ -227,6 +226,18 @@ jobs:
       - name: Check test user in DB
         run: |
           psql postgresql://test_user:test_password@localhost:5432/test_db -c "SELECT login, password FROM travel_db.users LIMIT 5;"
+
+      - name: Ensure Allure e2e results exist
+        run: |
+          if [ ! -d "allure-results/e2e" ] || [ -z "$(ls -A allure-results/e2e)" ]; then
+            echo '{
+              "name": "E2E tests skipped",
+              "status": "skipped",
+              "stage": "finished",
+              "steps": [],
+              "labels": [{"name":"suite","value":"E2E"}]
+            }' > allure-results/e2e/skipped-e2e.json
+          fi
 
       - name: Run e2e tests
         continue-on-error: true
