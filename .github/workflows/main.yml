@@ -226,18 +226,21 @@ jobs:
         run: |
           psql postgresql://test_user:test_password@localhost:5432/test_db -c "SELECT login, password FROM travel_db.users LIMIT 5;"
       
+      - name: Check test user in DB
+        run: |
+          psql postgresql://test_user:test_password@localhost:5432/test_db -c "SELECT login, password FROM travel_db.users LIMIT 5;"
+
       - name: Diagnostic check
         run: |
-          # Проверим какая база данных используется
           echo "Database check:"
-          psql postgresql://nastya:nastya@localhost:5432/travel_db -c "SELECT current_database(), version();"
-          
-          # Проверим таблицы
-          psql postgresql://nastya:nastya@localhost:5432/travel_db -c "\dt"
-          
-          # Проверим пользователей
-          psql postgresql://nastya:nastya@localhost:5432/travel_db -c "SELECT login, password FROM users LIMIT 5;"
+          psql postgresql://test_user:test_password@localhost:5432/test_db -c "SELECT current_database(), version();"
 
+          echo "Tables:"
+          psql postgresql://test_user:test_password@localhost:5432/test_db -c "\dt"
+
+          echo "Users sample:"
+          psql postgresql://test_user:test_password@localhost:5432/test_db -c "SELECT login, password FROM travel_db.users LIMIT 5;" || echo "No travel_db.users table"
+      
       - name: Run e2e tests
         run: |
           if [ "${{ needs.integration-tests.result }}" != "success" ]; then
@@ -260,6 +263,18 @@ jobs:
           BASE_URL: http://localhost:8000
           TEST_ENV: e2e
 
+      - name: Ensure Allure e2e results exist
+        run: |
+          if [ ! -d "allure-results/e2e" ] || [ -z "$(ls -A allure-results/e2e)" ]; then
+            echo '{
+              "name": "E2E tests skipped",
+              "status": "skipped",
+              "stage": "finished",
+              "steps": [],
+              "labels": [{"name":"suite","value":"E2E"}]
+            }' > allure-results/e2e/skipped-e2e.json
+          fi
+          
       - name: Upload e2e test results
         uses: actions/upload-artifact@v4
         with:
