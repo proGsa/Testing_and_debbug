@@ -1,0 +1,269 @@
+INFO     sqlalchemy.engine.Engine:base.py:2702 BEGIN (implicit)
+INFO     sqlalchemy.engine.Engine:base.py:1846 DROP TABLE IF EXISTS travel_accommodations CASCADE
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.366s ago] ()
+INFO     sqlalchemy.engine.Engine:base.py:1846 DROP TABLE IF EXISTS travel_entertainment CASCADE
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.367s ago] ()
+INFO     sqlalchemy.engine.Engine:base.py:1846 DROP TABLE IF EXISTS users_travel CASCADE
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.367s ago] ()
+INFO     sqlalchemy.engine.Engine:base.py:1846 DROP TABLE IF EXISTS entertainment CASCADE
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.368s ago] ()
+INFO     sqlalchemy.engine.Engine:base.py:1846 DROP TABLE IF EXISTS accommodations CASCADE;
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.368s ago] ()
+INFO     sqlalchemy.engine.Engine:base.py:1846 DROP TABLE IF EXISTS directory_route CASCADE
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.368s ago] ()
+INFO     sqlalchemy.engine.Engine:base.py:1846 DROP TABLE IF EXISTS route CASCADE
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.369s ago] ()
+INFO     sqlalchemy.engine.Engine:base.py:1846 DROP TABLE IF EXISTS users CASCADE
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.369s ago] ()
+INFO     sqlalchemy.engine.Engine:base.py:1846 DROP TABLE IF EXISTS travel CASCADE
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.37s ago] ()
+INFO     sqlalchemy.engine.Engine:base.py:1846 DROP TABLE IF EXISTS city CASCADE;
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.37s ago] ()
+INFO     sqlalchemy.engine.Engine:base.py:1846 
+                CREATE TABLE IF NOT EXISTS city (
+                    city_id SERIAL PRIMARY KEY,
+                    name VARCHAR NOT NULL UNIQUE
+                )
+                
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.37s ago] ()
+INFO     sqlalchemy.engine.Engine:base.py:1846 
+                CREATE TABLE entertainment (
+                    id SERIAL PRIMARY KEY,
+                    duration VARCHAR NOT NULL,
+                    address VARCHAR NOT NULL,
+                    event_name VARCHAR NOT NULL UNIQUE,
+                    event_time TIMESTAMP NOT NULL,
+                    city INTEGER REFERENCES city(city_id) ON DELETE CASCADE
+                )
+                
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.364s ago] ()
+INFO     sqlalchemy.engine.Engine:base.py:1846 
+                CREATE TABLE IF NOT EXISTS accommodations (
+                    id SERIAL PRIMARY KEY,
+                    price INTEGER NOT NULL,
+                    address VARCHAR NOT NULL,
+                    name VARCHAR NOT NULL UNIQUE,
+                    type VARCHAR NOT NULL,
+                    rating INTEGER NOT NULL,
+                    check_in TIMESTAMP NOT NULL,
+                    check_out TIMESTAMP NOT NULL, 
+                    city INTEGER NOT NULL REFERENCES city(city_id) ON DELETE CASCADE
+                )
+                
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.365s ago] ()
+INFO     sqlalchemy.engine.Engine:base.py:1846 
+                CREATE TABLE IF NOT EXISTS directory_route (
+                    id SERIAL PRIMARY KEY,
+                    type_transport VARCHAR NOT NULL,
+                    departure_city INT REFERENCES city(city_id) ON DELETE CASCADE,
+                    arrival_city INT REFERENCES city(city_id) ON DELETE CASCADE,
+                    distance INT NOT NULL ,
+                    price INT NOT NULL
+                )
+                
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.364s ago] ()
+INFO     sqlalchemy.engine.Engine:base.py:1846 
+                CREATE TABLE IF NOT EXISTS users (
+                    id SERIAL PRIMARY KEY,
+                    full_name VARCHAR NOT NULL,
+                    passport VARCHAR NOT NULL UNIQUE,
+                    phone VARCHAR NOT NULL UNIQUE,
+                    email VARCHAR NOT NULL UNIQUE,
+                    login VARCHAR NOT NULL UNIQUE,
+                    password VARCHAR NOT NULL,
+                    is_admin BOOLEAN NOT NULL DEFAULT FALSE
+                )
+                
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.364s ago] ()
+INFO     sqlalchemy.engine.Engine:base.py:1846 
+                CREATE TABLE IF NOT EXISTS travel (
+                    id SERIAL PRIMARY KEY,
+                    status VARCHAR NOT NULL,
+                    user_id INT NOT NULL
+                )
+                
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.364s ago] ()
+INFO     sqlalchemy.engine.Engine:base.py:1846 
+                CREATE TABLE IF NOT EXISTS travel_entertainment (
+                    id SERIAL PRIMARY KEY,
+                    travel_id INT NOT NULL,
+                    entertainment_id INT NOT NULL,
+                    CONSTRAINT fk_travel_id FOREIGN KEY (travel_id) REFERENCES travel(id) ON DELETE CASCADE,
+                    CONSTRAINT fk_entertainment_id FOREIGN KEY (entertainment_id) REFERENCES entertainment(id) ON DELETE CASCADE
+                )
+                
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.363s ago] ()
+INFO     sqlalchemy.engine.Engine:base.py:1846 
+                CREATE TABLE IF NOT EXISTS travel_accommodations (
+                    id SERIAL PRIMARY KEY,
+                    travel_id INT NOT NULL,
+                    accommodation_id INT NOT NULL,
+                    CONSTRAINT fk_travel_id FOREIGN KEY (travel_id) REFERENCES travel(id) ON DELETE CASCADE,
+                    CONSTRAINT fk_accommodation_id FOREIGN KEY (accommodation_id) REFERENCES accommodations(id) ON DELETE CASCADE
+                )
+                
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.363s ago] ()
+INFO     sqlalchemy.engine.Engine:base.py:1846 
+                CREATE TABLE IF NOT EXISTS users_travel (
+                    id SERIAL PRIMARY KEY,
+                    travel_id INT NOT NULL,
+                    users_id INT NOT NULL,
+                    CONSTRAINT fk_travel_id FOREIGN KEY (travel_id) REFERENCES travel(id) ON DELETE CASCADE,
+                    CONSTRAINT fk_users_id FOREIGN KEY (users_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+                
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.363s ago] ()
+INFO     sqlalchemy.engine.Engine:base.py:1846 
+                CREATE TABLE IF NOT EXISTS route (
+                    id SERIAL PRIMARY KEY,
+                    d_route_id INT NOT NULL,
+                    travel_id INT NOT NULL,
+                    start_time TIMESTAMP NOT NULL,
+                    end_time TIMESTAMP NOT NULL,
+                    type VARCHAR(20) NOT NULL,
+                    CONSTRAINT fk_d_route_id FOREIGN KEY (d_route_id) REFERENCES directory_route(id) ON DELETE CASCADE,
+                    CONSTRAINT fk_travel_id FOREIGN KEY (travel_id) REFERENCES travel(id) ON DELETE CASCADE
+                )
+                
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.363s ago] ()
+INFO     sqlalchemy.engine.Engine:base.py:1846 TRUNCATE entertainment RESTART IDENTITY CASCADE;
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.363s ago] ()
+INFO     sqlalchemy.engine.Engine:base.py:1846 TRUNCATE accommodations RESTART IDENTITY CASCADE;
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.364s ago] ()
+INFO     sqlalchemy.engine.Engine:base.py:1846 TRUNCATE directory_route RESTART IDENTITY CASCADE;
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.363s ago] ()
+INFO     sqlalchemy.engine.Engine:base.py:1846 TRUNCATE travel_accommodations RESTART IDENTITY CASCADE
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.364s ago] ()
+INFO     sqlalchemy.engine.Engine:base.py:1846 TRUNCATE travel_entertainment RESTART IDENTITY CASCADE
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.363s ago] ()
+INFO     sqlalchemy.engine.Engine:base.py:1846 TRUNCATE users_travel RESTART IDENTITY CASCADE
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.363s ago] ()
+INFO     sqlalchemy.engine.Engine:base.py:1846 TRUNCATE route RESTART IDENTITY CASCADE
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.363s ago] ()
+INFO     sqlalchemy.engine.Engine:base.py:1846 TRUNCATE users RESTART IDENTITY CASCADE;
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.363s ago] ()
+INFO     sqlalchemy.engine.Engine:base.py:1846 TRUNCATE travel RESTART IDENTITY CASCADE;
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.364s ago] ()
+INFO     sqlalchemy.engine.Engine:base.py:1846 TRUNCATE city RESTART IDENTITY CASCADE;
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.364s ago] ()
+INFO     sqlalchemy.engine.Engine:base.py:2708 COMMIT
+INFO     sqlalchemy.engine.Engine:base.py:2702 BEGIN (implicit)
+INFO     sqlalchemy.engine.Engine:base.py:1846 
+                INSERT INTO city (name) VALUES 
+                ('Москва'), ('Воронеж'), ('Санкт-Петербург'), 
+                ('Екатеринбург'), ('Калининград')
+                
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.366s ago] ()
+INFO     sqlalchemy.engine.Engine:base.py:1846 
+                    INSERT INTO entertainment 
+                    (duration, address, event_name, event_time, city) 
+                    VALUES ($1, $2, $3, $4, $5)
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.368s ago] ('4 часа', 'Главная площадь', 'Концерт', datetime.datetime(2025, 4, 10, 16, 0), 1)
+INFO     sqlalchemy.engine.Engine:base.py:1846 
+                    INSERT INTO entertainment 
+                    (duration, address, event_name, event_time, city) 
+                    VALUES ($1, $2, $3, $4, $5)
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.369s ago] ('3 часа', 'ул. Кузнецова, 4', 'Выставка', datetime.datetime(2025, 4, 5, 10, 0), 1)
+INFO     sqlalchemy.engine.Engine:base.py:2708 COMMIT
+INFO     sqlalchemy.engine.Engine:base.py:2702 BEGIN (implicit)
+INFO     sqlalchemy.engine.Engine:base.py:1846 
+                    INSERT INTO accommodations 
+                    (price, address, name, type, rating, check_in, check_out, city) 
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.368s ago] (33450, 'ул. Дмитриевского, 7', 'ABC', 'Квартира', 3, datetime.datetime(2025, 4, 2, 14, 0), datetime.datetime(2025, 4, 6, 18, 0), 1)
+INFO     sqlalchemy.engine.Engine:base.py:1846 
+                    INSERT INTO accommodations 
+                    (price, address, name, type, rating, check_in, check_out, city) 
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.369s ago] (46840, 'Улица Гоголя, 12', 'Four Seasons', 'Отель', 5, datetime.datetime(2025, 3, 29, 12, 30), datetime.datetime(2025, 4, 5, 18, 0), 1)
+INFO     sqlalchemy.engine.Engine:base.py:1846 INSERT INTO directory_route (type_transport, departure_city,                         arrival_city, distance, price)                     VALUES ($1, $2, $3, $4, $5)
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.367s ago] ('Паром', 3, 5, 966, 3987)
+INFO     sqlalchemy.engine.Engine:base.py:1846 INSERT INTO directory_route (type_transport, departure_city,                         arrival_city, distance, price)                     VALUES ($1, $2, $3, $4, $5)
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.368s ago] ('Самолет', 3, 5, 966, 5123)
+INFO     sqlalchemy.engine.Engine:base.py:1846 INSERT INTO directory_route (type_transport, departure_city,                         arrival_city, distance, price)                     VALUES ($1, $2, $3, $4, $5)
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.369s ago] ('Автобус', 3, 4, 1840, 3796)
+INFO     sqlalchemy.engine.Engine:base.py:1846 INSERT INTO directory_route (type_transport, departure_city,                         arrival_city, distance, price)                     VALUES ($1, $2, $3, $4, $5)
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.369s ago] ('Поезд', 3, 5, 966, 2541)
+INFO     sqlalchemy.engine.Engine:base.py:1846 INSERT INTO directory_route (type_transport, departure_city,                         arrival_city, distance, price)                     VALUES ($1, $2, $3, $4, $5)
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.37s ago] ('Автобус', 3, 5, 966, 4756)
+INFO     sqlalchemy.engine.Engine:base.py:1846 INSERT INTO directory_route (type_transport, departure_city,                         arrival_city, distance, price)                     VALUES ($1, $2, $3, $4, $5)
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.37s ago] ('Самолет', 3, 4, 1840, 8322)
+INFO     sqlalchemy.engine.Engine:base.py:1846 INSERT INTO directory_route (type_transport, departure_city,                         arrival_city, distance, price)                     VALUES ($1, $2, $3, $4, $5)
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.371s ago] ('Поезд', 3, 4, 1840, 4305)
+INFO     sqlalchemy.engine.Engine:base.py:1846 INSERT INTO directory_route (type_transport, departure_city,                         arrival_city, distance, price)                     VALUES ($1, $2, $3, $4, $5)
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.372s ago] ('Самолет', 5, 4, 3025, 10650)
+INFO     sqlalchemy.engine.Engine:base.py:1846 INSERT INTO directory_route (type_transport, departure_city,                         arrival_city, distance, price)                     VALUES ($1, $2, $3, $4, $5)
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.372s ago] ('Поезд', 5, 4, 3025, 5988)
+INFO     sqlalchemy.engine.Engine:base.py:1846 INSERT INTO directory_route (type_transport, departure_city,                         arrival_city, distance, price)                     VALUES ($1, $2, $3, $4, $5)
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.373s ago] ('Самолет', 1, 2, 467, 2223)
+INFO     sqlalchemy.engine.Engine:base.py:1846 INSERT INTO directory_route (type_transport, departure_city,                         arrival_city, distance, price)                     VALUES ($1, $2, $3, $4, $5)
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.373s ago] ('Поезд', 1, 2, 515, 1911)
+INFO     sqlalchemy.engine.Engine:base.py:1846 INSERT INTO directory_route (type_transport, departure_city,                         arrival_city, distance, price)                     VALUES ($1, $2, $3, $4, $5)
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.374s ago] ('Поезд', 4, 1, 1780, 3500)
+INFO     sqlalchemy.engine.Engine:base.py:1846 
+                    INSERT INTO users (full_name, passport, phone, email, login, password, is_admin)
+                    VALUES ($1, $2, $3, $4, $5, $6, false)
+                
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.367s ago] ('Лобач Анастасия Олеговна', '1111111111', '89261111111', 'nastya@lobach.info', 'user1', '123!e5T78')
+INFO     sqlalchemy.engine.Engine:base.py:1846 
+                    INSERT INTO users (full_name, passport, phone, email, login, password, is_admin)
+                    VALUES ($1, $2, $3, $4, $5, $6, false)
+                
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.368s ago] ('Иванов Иван Иванович', '2222222222', '89262222222', 'ivanov@ivanov.com', 'user2', '456!f6R89')
+INFO     sqlalchemy.engine.Engine:base.py:1846 
+                    INSERT INTO users (full_name, passport, phone, email, login, password, is_admin)
+                    VALUES ($1, $2, $3, $4, $5, $6, false)
+                
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.368s ago] ('Петров Петр Петрович', '3333333333', '89263333333', 'petrov@petrov.com', 'user3', '789!g7T90')
+INFO     sqlalchemy.engine.Engine:base.py:1846 
+                    INSERT INTO travel (id, status, user_id) VALUES ($1, $2, $3)
+                
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.367s ago] (1, 'В процессе', 1)
+INFO     sqlalchemy.engine.Engine:base.py:1846 
+                    INSERT INTO travel (id, status, user_id) VALUES ($1, $2, $3)
+                
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.368s ago] (2, 'Завершен', 1)
+INFO     sqlalchemy.engine.Engine:base.py:1846 INSERT INTO travel_entertainment (travel_id, entertainment_id)                         VALUES ($1, $2)
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.367s ago] (1, 2)
+INFO     sqlalchemy.engine.Engine:base.py:1846 INSERT INTO travel_entertainment (travel_id, entertainment_id)                         VALUES ($1, $2)
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.368s ago] (2, 1)
+INFO     sqlalchemy.engine.Engine:base.py:1846 INSERT INTO travel_accommodations (travel_id, accommodation_id)                         VALUES ($1, $2)
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.367s ago] (1, 1)
+INFO     sqlalchemy.engine.Engine:base.py:1846 INSERT INTO travel_accommodations (travel_id, accommodation_id)                         VALUES ($1, $2)
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.368s ago] (2, 2)
+INFO     sqlalchemy.engine.Engine:base.py:1846 INSERT INTO route (d_route_id, travel_id, start_time, end_time, type)                         VALUES ($1, $2, $3, $4, $5)
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.367s ago] (1, 1, datetime.datetime(2025, 4, 2, 7, 30), datetime.datetime(2025, 4, 6, 7, 0), 'Свои')
+INFO     sqlalchemy.engine.Engine:base.py:1846 INSERT INTO route (d_route_id, travel_id, start_time, end_time, type)                         VALUES ($1, $2, $3, $4, $5)
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.367s ago] (9, 1, datetime.datetime(2025, 4, 3, 7, 30), datetime.datetime(2025, 4, 6, 7, 0), 'Свои')
+INFO     sqlalchemy.engine.Engine:base.py:1846 INSERT INTO route (d_route_id, travel_id, start_time, end_time, type)                         VALUES ($1, $2, $3, $4, $5)
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.368s ago] (11, 2, datetime.datetime(2025, 3, 29, 6, 50), datetime.datetime(2025, 4, 5, 22, 45), 'Свои')
+INFO     sqlalchemy.engine.Engine:base.py:1846 INSERT INTO users_travel (travel_id, users_id) VALUES ($1, $2)
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.366s ago] (1, 1)
+INFO     sqlalchemy.engine.Engine:base.py:1846 INSERT INTO users_travel (travel_id, users_id) VALUES ($1, $2)
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.367s ago] (2, 1)
+INFO     sqlalchemy.engine.Engine:base.py:2708 COMMIT
+INFO     sqlalchemy.engine.Engine:base.py:2702 BEGIN (implicit)
+INFO     sqlalchemy.engine.Engine:base.py:1846 SELECT * FROM travel WHERE id = $1
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 2.304s ago] (1,)
+INFO     sqlalchemy.engine.Engine:base.py:1846 
+            SELECT users_id FROM users_travel 
+            WHERE travel_id = $1
+        
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 2.304s ago] (1,)
+INFO     sqlalchemy.engine.Engine:base.py:1846 SELECT * FROM users WHERE id = $1
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 2.303s ago] (1,)
+INFO     sqlalchemy.engine.Engine:base.py:1846 SELECT entertainment_id FROM travel_entertainment WHERE travel_id = $1
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 2.303s ago] (1,)
+INFO     sqlalchemy.engine.Engine:base.py:1846 SELECT * FROM entertainment WHERE id = $1
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 3.821s ago] (2,)
+INFO     sqlalchemy.engine.Engine:base.py:1846 SELECT * FROM city WHERE city_id = $1
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.25s ago] (1,)
+INFO     sqlalchemy.engine.Engine:base.py:1846 SELECT accommodation_id FROM travel_accommodations WHERE travel_id = $1
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 2.303s ago] (1,)
+INFO     sqlalchemy.engine.Engine:base.py:1846 SELECT * FROM accommodations WHERE id = $1
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.252s ago] (1,)
+INFO     sqlalchemy.engine.Engine:base.py:1846 SELECT * FROM city WHERE city_id = $1
+INFO     sqlalchemy.engine.Engine:base.py:1846 [cached since 7.252s ago] (1,)
+INFO     sqlalchemy.engine.Engine:base.py:2705 ROLLBACK
