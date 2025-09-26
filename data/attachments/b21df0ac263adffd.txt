@@ -1,0 +1,254 @@
+2025-09-26 19:05:30,053 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-09-26 19:05:30,053 INFO sqlalchemy.engine.Engine DROP TABLE IF EXISTS travel_accommodations CASCADE
+2025-09-26 19:05:30,053 INFO sqlalchemy.engine.Engine [cached since 0.2776s ago] ()
+2025-09-26 19:05:30,054 INFO sqlalchemy.engine.Engine DROP TABLE IF EXISTS travel_entertainment CASCADE
+2025-09-26 19:05:30,054 INFO sqlalchemy.engine.Engine [cached since 0.2778s ago] ()
+2025-09-26 19:05:30,055 INFO sqlalchemy.engine.Engine DROP TABLE IF EXISTS users_travel CASCADE
+2025-09-26 19:05:30,055 INFO sqlalchemy.engine.Engine [cached since 0.278s ago] ()
+2025-09-26 19:05:30,056 INFO sqlalchemy.engine.Engine DROP TABLE IF EXISTS entertainment CASCADE
+2025-09-26 19:05:30,056 INFO sqlalchemy.engine.Engine [cached since 0.2783s ago] ()
+2025-09-26 19:05:30,057 INFO sqlalchemy.engine.Engine DROP TABLE IF EXISTS accommodations CASCADE;
+2025-09-26 19:05:30,057 INFO sqlalchemy.engine.Engine [cached since 0.2786s ago] ()
+2025-09-26 19:05:30,058 INFO sqlalchemy.engine.Engine DROP TABLE IF EXISTS directory_route CASCADE
+2025-09-26 19:05:30,058 INFO sqlalchemy.engine.Engine [cached since 0.2789s ago] ()
+2025-09-26 19:05:30,059 INFO sqlalchemy.engine.Engine DROP TABLE IF EXISTS route CASCADE
+2025-09-26 19:05:30,059 INFO sqlalchemy.engine.Engine [cached since 0.2794s ago] ()
+2025-09-26 19:05:30,060 INFO sqlalchemy.engine.Engine DROP TABLE IF EXISTS users CASCADE
+2025-09-26 19:05:30,060 INFO sqlalchemy.engine.Engine [cached since 0.2795s ago] ()
+2025-09-26 19:05:30,061 INFO sqlalchemy.engine.Engine DROP TABLE IF EXISTS travel CASCADE
+2025-09-26 19:05:30,061 INFO sqlalchemy.engine.Engine [cached since 0.2799s ago] ()
+2025-09-26 19:05:30,061 INFO sqlalchemy.engine.Engine DROP TABLE IF EXISTS city CASCADE;
+2025-09-26 19:05:30,062 INFO sqlalchemy.engine.Engine [cached since 0.28s ago] ()
+2025-09-26 19:05:30,062 INFO sqlalchemy.engine.Engine 
+                CREATE TABLE IF NOT EXISTS city (
+                    city_id SERIAL PRIMARY KEY,
+                    name VARCHAR NOT NULL UNIQUE
+                )
+                
+2025-09-26 19:05:30,062 INFO sqlalchemy.engine.Engine [cached since 0.2801s ago] ()
+2025-09-26 19:05:30,067 INFO sqlalchemy.engine.Engine 
+                CREATE TABLE entertainment (
+                    id SERIAL PRIMARY KEY,
+                    duration VARCHAR NOT NULL,
+                    address VARCHAR NOT NULL,
+                    event_name VARCHAR NOT NULL UNIQUE,
+                    event_time TIMESTAMP NOT NULL,
+                    city INTEGER REFERENCES city(city_id) ON DELETE CASCADE
+                )
+                
+2025-09-26 19:05:30,068 INFO sqlalchemy.engine.Engine [cached since 0.2758s ago] ()
+2025-09-26 19:05:30,071 INFO sqlalchemy.engine.Engine 
+                CREATE TABLE IF NOT EXISTS accommodations (
+                    id SERIAL PRIMARY KEY,
+                    price INTEGER NOT NULL,
+                    address VARCHAR NOT NULL,
+                    name VARCHAR NOT NULL UNIQUE,
+                    type VARCHAR NOT NULL,
+                    rating INTEGER NOT NULL,
+                    check_in TIMESTAMP NOT NULL,
+                    check_out TIMESTAMP NOT NULL, 
+                    city INTEGER NOT NULL REFERENCES city(city_id) ON DELETE CASCADE
+                )
+                
+2025-09-26 19:05:30,071 INFO sqlalchemy.engine.Engine [cached since 0.2754s ago] ()
+2025-09-26 19:05:30,075 INFO sqlalchemy.engine.Engine 
+                CREATE TABLE IF NOT EXISTS directory_route (
+                    id SERIAL PRIMARY KEY,
+                    type_transport VARCHAR NOT NULL,
+                    departure_city INT REFERENCES city(city_id) ON DELETE CASCADE,
+                    arrival_city INT REFERENCES city(city_id) ON DELETE CASCADE,
+                    distance INT NOT NULL ,
+                    price INT NOT NULL
+                )
+                
+2025-09-26 19:05:30,075 INFO sqlalchemy.engine.Engine [cached since 0.2753s ago] ()
+2025-09-26 19:05:30,078 INFO sqlalchemy.engine.Engine 
+                CREATE TABLE IF NOT EXISTS users (
+                    id SERIAL PRIMARY KEY,
+                    full_name VARCHAR NOT NULL,
+                    passport VARCHAR NOT NULL UNIQUE,
+                    phone VARCHAR NOT NULL UNIQUE,
+                    email VARCHAR NOT NULL UNIQUE,
+                    login VARCHAR NOT NULL UNIQUE,
+                    password VARCHAR NOT NULL,
+                    is_admin BOOLEAN NOT NULL DEFAULT FALSE
+                )
+                
+2025-09-26 19:05:30,078 INFO sqlalchemy.engine.Engine [cached since 0.275s ago] ()
+2025-09-26 19:05:30,084 INFO sqlalchemy.engine.Engine 
+                CREATE TABLE IF NOT EXISTS travel (
+                    id SERIAL PRIMARY KEY,
+                    status VARCHAR NOT NULL,
+                    user_id INT NOT NULL
+                )
+                
+2025-09-26 19:05:30,084 INFO sqlalchemy.engine.Engine [cached since 0.2746s ago] ()
+2025-09-26 19:05:30,086 INFO sqlalchemy.engine.Engine 
+                CREATE TABLE IF NOT EXISTS travel_entertainment (
+                    id SERIAL PRIMARY KEY,
+                    travel_id INT NOT NULL,
+                    entertainment_id INT NOT NULL,
+                    CONSTRAINT fk_travel_id FOREIGN KEY (travel_id) REFERENCES travel(id) ON DELETE CASCADE,
+                    CONSTRAINT fk_entertainment_id FOREIGN KEY (entertainment_id) REFERENCES entertainment(id) ON DELETE CASCADE
+                )
+                
+2025-09-26 19:05:30,086 INFO sqlalchemy.engine.Engine [cached since 0.2739s ago] ()
+2025-09-26 19:05:30,088 INFO sqlalchemy.engine.Engine 
+                CREATE TABLE IF NOT EXISTS travel_accommodations (
+                    id SERIAL PRIMARY KEY,
+                    travel_id INT NOT NULL,
+                    accommodation_id INT NOT NULL,
+                    CONSTRAINT fk_travel_id FOREIGN KEY (travel_id) REFERENCES travel(id) ON DELETE CASCADE,
+                    CONSTRAINT fk_accommodation_id FOREIGN KEY (accommodation_id) REFERENCES accommodations(id) ON DELETE CASCADE
+                )
+                
+2025-09-26 19:05:30,088 INFO sqlalchemy.engine.Engine [cached since 0.2734s ago] ()
+2025-09-26 19:05:30,090 INFO sqlalchemy.engine.Engine 
+                CREATE TABLE IF NOT EXISTS users_travel (
+                    id SERIAL PRIMARY KEY,
+                    travel_id INT NOT NULL,
+                    users_id INT NOT NULL,
+                    CONSTRAINT fk_travel_id FOREIGN KEY (travel_id) REFERENCES travel(id) ON DELETE CASCADE,
+                    CONSTRAINT fk_users_id FOREIGN KEY (users_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+                
+2025-09-26 19:05:30,090 INFO sqlalchemy.engine.Engine [cached since 0.2731s ago] ()
+2025-09-26 19:05:30,092 INFO sqlalchemy.engine.Engine 
+                CREATE TABLE IF NOT EXISTS route (
+                    id SERIAL PRIMARY KEY,
+                    d_route_id INT NOT NULL,
+                    travel_id INT NOT NULL,
+                    start_time TIMESTAMP NOT NULL,
+                    end_time TIMESTAMP NOT NULL,
+                    type VARCHAR(20) NOT NULL,
+                    CONSTRAINT fk_d_route_id FOREIGN KEY (d_route_id) REFERENCES directory_route(id) ON DELETE CASCADE,
+                    CONSTRAINT fk_travel_id FOREIGN KEY (travel_id) REFERENCES travel(id) ON DELETE CASCADE
+                )
+                
+2025-09-26 19:05:30,092 INFO sqlalchemy.engine.Engine [cached since 0.2727s ago] ()
+2025-09-26 19:05:30,094 INFO sqlalchemy.engine.Engine TRUNCATE entertainment RESTART IDENTITY CASCADE;
+2025-09-26 19:05:30,094 INFO sqlalchemy.engine.Engine [cached since 0.2723s ago] ()
+2025-09-26 19:05:30,100 INFO sqlalchemy.engine.Engine TRUNCATE accommodations RESTART IDENTITY CASCADE;
+2025-09-26 19:05:30,100 INFO sqlalchemy.engine.Engine [cached since 0.2726s ago] ()
+2025-09-26 19:05:30,105 INFO sqlalchemy.engine.Engine TRUNCATE directory_route RESTART IDENTITY CASCADE;
+2025-09-26 19:05:30,105 INFO sqlalchemy.engine.Engine [cached since 0.2706s ago] ()
+2025-09-26 19:05:30,109 INFO sqlalchemy.engine.Engine TRUNCATE travel_accommodations RESTART IDENTITY CASCADE
+2025-09-26 19:05:30,109 INFO sqlalchemy.engine.Engine [cached since 0.27s ago] ()
+2025-09-26 19:05:30,111 INFO sqlalchemy.engine.Engine TRUNCATE travel_entertainment RESTART IDENTITY CASCADE
+2025-09-26 19:05:30,111 INFO sqlalchemy.engine.Engine [cached since 0.27s ago] ()
+2025-09-26 19:05:30,113 INFO sqlalchemy.engine.Engine TRUNCATE users_travel RESTART IDENTITY CASCADE
+2025-09-26 19:05:30,113 INFO sqlalchemy.engine.Engine [cached since 0.2699s ago] ()
+2025-09-26 19:05:30,115 INFO sqlalchemy.engine.Engine TRUNCATE route RESTART IDENTITY CASCADE
+2025-09-26 19:05:30,115 INFO sqlalchemy.engine.Engine [cached since 0.2697s ago] ()
+2025-09-26 19:05:30,116 INFO sqlalchemy.engine.Engine TRUNCATE users RESTART IDENTITY CASCADE;
+2025-09-26 19:05:30,116 INFO sqlalchemy.engine.Engine [cached since 0.2695s ago] ()
+2025-09-26 19:05:30,124 INFO sqlalchemy.engine.Engine TRUNCATE travel RESTART IDENTITY CASCADE;
+2025-09-26 19:05:30,124 INFO sqlalchemy.engine.Engine [cached since 0.2681s ago] ()
+2025-09-26 19:05:30,132 INFO sqlalchemy.engine.Engine TRUNCATE city RESTART IDENTITY CASCADE;
+2025-09-26 19:05:30,132 INFO sqlalchemy.engine.Engine [cached since 0.2671s ago] ()
+2025-09-26 19:05:30,149 INFO sqlalchemy.engine.Engine COMMIT
+2025-09-26 19:05:30,154 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-09-26 19:05:30,154 INFO sqlalchemy.engine.Engine 
+                INSERT INTO city (name) VALUES 
+                ('Москва'), ('Воронеж'), ('Санкт-Петербург'), 
+                ('Екатеринбург'), ('Калининград')
+                
+2025-09-26 19:05:30,154 INFO sqlalchemy.engine.Engine [cached since 0.2712s ago] ()
+2025-09-26 19:05:30,155 INFO sqlalchemy.engine.Engine 
+                    INSERT INTO entertainment 
+                    (duration, address, event_name, event_time, city) 
+                    VALUES ($1, $2, $3, $4, $5)
+2025-09-26 19:05:30,155 INFO sqlalchemy.engine.Engine [cached since 0.2707s ago] ('4 часа', 'Главная площадь', 'Концерт', datetime.datetime(2025, 4, 10, 16, 0), 1)
+2025-09-26 19:05:30,156 INFO sqlalchemy.engine.Engine 
+                    INSERT INTO entertainment 
+                    (duration, address, event_name, event_time, city) 
+                    VALUES ($1, $2, $3, $4, $5)
+2025-09-26 19:05:30,156 INFO sqlalchemy.engine.Engine [cached since 0.2715s ago] ('3 часа', 'ул. Кузнецова, 4', 'Выставка', datetime.datetime(2025, 4, 5, 10, 0), 1)
+2025-09-26 19:05:30,156 INFO sqlalchemy.engine.Engine COMMIT
+2025-09-26 19:05:30,157 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-09-26 19:05:30,157 INFO sqlalchemy.engine.Engine 
+                    INSERT INTO accommodations 
+                    (price, address, name, type, rating, check_in, check_out, city) 
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                
+2025-09-26 19:05:30,157 INFO sqlalchemy.engine.Engine [cached since 0.2701s ago] (33450, 'ул. Дмитриевского, 7', 'ABC', 'Квартира', 3, datetime.datetime(2025, 4, 2, 14, 0), datetime.datetime(2025, 4, 6, 18, 0), 1)
+2025-09-26 19:05:30,158 INFO sqlalchemy.engine.Engine 
+                    INSERT INTO accommodations 
+                    (price, address, name, type, rating, check_in, check_out, city) 
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                
+2025-09-26 19:05:30,158 INFO sqlalchemy.engine.Engine [cached since 0.2711s ago] (46840, 'Улица Гоголя, 12', 'Four Seasons', 'Отель', 5, datetime.datetime(2025, 3, 29, 12, 30), datetime.datetime(2025, 4, 5, 18, 0), 1)
+2025-09-26 19:05:30,159 INFO sqlalchemy.engine.Engine INSERT INTO directory_route (type_transport, departure_city,                         arrival_city, distance, price)                     VALUES ($1, $2, $3, $4, $5)
+2025-09-26 19:05:30,159 INFO sqlalchemy.engine.Engine [cached since 0.2698s ago] ('Паром', 3, 5, 966, 3987)
+2025-09-26 19:05:30,159 INFO sqlalchemy.engine.Engine INSERT INTO directory_route (type_transport, departure_city,                         arrival_city, distance, price)                     VALUES ($1, $2, $3, $4, $5)
+2025-09-26 19:05:30,159 INFO sqlalchemy.engine.Engine [cached since 0.2705s ago] ('Самолет', 3, 5, 966, 5123)
+2025-09-26 19:05:30,160 INFO sqlalchemy.engine.Engine INSERT INTO directory_route (type_transport, departure_city,                         arrival_city, distance, price)                     VALUES ($1, $2, $3, $4, $5)
+2025-09-26 19:05:30,160 INFO sqlalchemy.engine.Engine [cached since 0.2711s ago] ('Автобус', 3, 4, 1840, 3796)
+2025-09-26 19:05:30,161 INFO sqlalchemy.engine.Engine INSERT INTO directory_route (type_transport, departure_city,                         arrival_city, distance, price)                     VALUES ($1, $2, $3, $4, $5)
+2025-09-26 19:05:30,161 INFO sqlalchemy.engine.Engine [cached since 0.2717s ago] ('Поезд', 3, 5, 966, 2541)
+2025-09-26 19:05:30,161 INFO sqlalchemy.engine.Engine INSERT INTO directory_route (type_transport, departure_city,                         arrival_city, distance, price)                     VALUES ($1, $2, $3, $4, $5)
+2025-09-26 19:05:30,161 INFO sqlalchemy.engine.Engine [cached since 0.2723s ago] ('Автобус', 3, 5, 966, 4756)
+2025-09-26 19:05:30,162 INFO sqlalchemy.engine.Engine INSERT INTO directory_route (type_transport, departure_city,                         arrival_city, distance, price)                     VALUES ($1, $2, $3, $4, $5)
+2025-09-26 19:05:30,162 INFO sqlalchemy.engine.Engine [cached since 0.2729s ago] ('Самолет', 3, 4, 1840, 8322)
+2025-09-26 19:05:30,162 INFO sqlalchemy.engine.Engine INSERT INTO directory_route (type_transport, departure_city,                         arrival_city, distance, price)                     VALUES ($1, $2, $3, $4, $5)
+2025-09-26 19:05:30,162 INFO sqlalchemy.engine.Engine [cached since 0.2735s ago] ('Поезд', 3, 4, 1840, 4305)
+2025-09-26 19:05:30,163 INFO sqlalchemy.engine.Engine INSERT INTO directory_route (type_transport, departure_city,                         arrival_city, distance, price)                     VALUES ($1, $2, $3, $4, $5)
+2025-09-26 19:05:30,163 INFO sqlalchemy.engine.Engine [cached since 0.274s ago] ('Самолет', 5, 4, 3025, 10650)
+2025-09-26 19:05:30,163 INFO sqlalchemy.engine.Engine INSERT INTO directory_route (type_transport, departure_city,                         arrival_city, distance, price)                     VALUES ($1, $2, $3, $4, $5)
+2025-09-26 19:05:30,163 INFO sqlalchemy.engine.Engine [cached since 0.2746s ago] ('Поезд', 5, 4, 3025, 5988)
+2025-09-26 19:05:30,164 INFO sqlalchemy.engine.Engine INSERT INTO directory_route (type_transport, departure_city,                         arrival_city, distance, price)                     VALUES ($1, $2, $3, $4, $5)
+2025-09-26 19:05:30,164 INFO sqlalchemy.engine.Engine [cached since 0.2751s ago] ('Самолет', 1, 2, 467, 2223)
+2025-09-26 19:05:30,164 INFO sqlalchemy.engine.Engine INSERT INTO directory_route (type_transport, departure_city,                         arrival_city, distance, price)                     VALUES ($1, $2, $3, $4, $5)
+2025-09-26 19:05:30,164 INFO sqlalchemy.engine.Engine [cached since 0.2756s ago] ('Поезд', 1, 2, 515, 1911)
+2025-09-26 19:05:30,165 INFO sqlalchemy.engine.Engine INSERT INTO directory_route (type_transport, departure_city,                         arrival_city, distance, price)                     VALUES ($1, $2, $3, $4, $5)
+2025-09-26 19:05:30,165 INFO sqlalchemy.engine.Engine [cached since 0.2761s ago] ('Поезд', 4, 1, 1780, 3500)
+2025-09-26 19:05:30,165 INFO sqlalchemy.engine.Engine 
+                    INSERT INTO users (full_name, passport, phone, email, login, password, is_admin)
+                    VALUES ($1, $2, $3, $4, $5, $6, false)
+                
+2025-09-26 19:05:30,166 INFO sqlalchemy.engine.Engine [cached since 0.2694s ago] ('Лобач Анастасия Олеговна', '1111111111', '89261111111', 'nastya@lobach.info', 'user1', '123!e5T78')
+2025-09-26 19:05:30,166 INFO sqlalchemy.engine.Engine 
+                    INSERT INTO users (full_name, passport, phone, email, login, password, is_admin)
+                    VALUES ($1, $2, $3, $4, $5, $6, false)
+                
+2025-09-26 19:05:30,166 INFO sqlalchemy.engine.Engine [cached since 0.2702s ago] ('Иванов Иван Иванович', '2222222222', '89262222222', 'ivanov@ivanov.com', 'user2', '456!f6R89')
+2025-09-26 19:05:30,167 INFO sqlalchemy.engine.Engine 
+                    INSERT INTO users (full_name, passport, phone, email, login, password, is_admin)
+                    VALUES ($1, $2, $3, $4, $5, $6, false)
+                
+2025-09-26 19:05:30,167 INFO sqlalchemy.engine.Engine [cached since 0.2707s ago] ('Петров Петр Петрович', '3333333333', '89263333333', 'petrov@petrov.com', 'user3', '789!g7T90')
+2025-09-26 19:05:30,167 INFO sqlalchemy.engine.Engine 
+                    INSERT INTO travel (id, status, user_id) VALUES ($1, $2, $3)
+                
+2025-09-26 19:05:30,167 INFO sqlalchemy.engine.Engine [cached since 0.2689s ago] (1, 'В процессе', 1)
+2025-09-26 19:05:30,168 INFO sqlalchemy.engine.Engine 
+                    INSERT INTO travel (id, status, user_id) VALUES ($1, $2, $3)
+                
+2025-09-26 19:05:30,168 INFO sqlalchemy.engine.Engine [cached since 0.2696s ago] (2, 'Завершен', 1)
+2025-09-26 19:05:30,168 INFO sqlalchemy.engine.Engine INSERT INTO travel_entertainment (travel_id, entertainment_id)                         VALUES ($1, $2)
+2025-09-26 19:05:30,168 INFO sqlalchemy.engine.Engine [cached since 0.2686s ago] (1, 2)
+2025-09-26 19:05:30,169 INFO sqlalchemy.engine.Engine INSERT INTO travel_entertainment (travel_id, entertainment_id)                         VALUES ($1, $2)
+2025-09-26 19:05:30,169 INFO sqlalchemy.engine.Engine [cached since 0.2694s ago] (2, 1)
+2025-09-26 19:05:30,170 INFO sqlalchemy.engine.Engine INSERT INTO travel_accommodations (travel_id, accommodation_id)                         VALUES ($1, $2)
+2025-09-26 19:05:30,170 INFO sqlalchemy.engine.Engine [cached since 0.2682s ago] (1, 1)
+2025-09-26 19:05:30,170 INFO sqlalchemy.engine.Engine INSERT INTO travel_accommodations (travel_id, accommodation_id)                         VALUES ($1, $2)
+2025-09-26 19:05:30,170 INFO sqlalchemy.engine.Engine [cached since 0.269s ago] (2, 2)
+2025-09-26 19:05:30,171 INFO sqlalchemy.engine.Engine INSERT INTO route (d_route_id, travel_id, start_time, end_time, type)                         VALUES ($1, $2, $3, $4, $5)
+2025-09-26 19:05:30,171 INFO sqlalchemy.engine.Engine [cached since 0.2679s ago] (1, 1, datetime.datetime(2025, 4, 2, 7, 30), datetime.datetime(2025, 4, 6, 7, 0), 'Свои')
+2025-09-26 19:05:30,172 INFO sqlalchemy.engine.Engine INSERT INTO route (d_route_id, travel_id, start_time, end_time, type)                         VALUES ($1, $2, $3, $4, $5)
+2025-09-26 19:05:30,172 INFO sqlalchemy.engine.Engine [cached since 0.2692s ago] (9, 1, datetime.datetime(2025, 4, 3, 7, 30), datetime.datetime(2025, 4, 6, 7, 0), 'Свои')
+2025-09-26 19:05:30,173 INFO sqlalchemy.engine.Engine INSERT INTO route (d_route_id, travel_id, start_time, end_time, type)                         VALUES ($1, $2, $3, $4, $5)
+2025-09-26 19:05:30,173 INFO sqlalchemy.engine.Engine [cached since 0.2698s ago] (11, 2, datetime.datetime(2025, 3, 29, 6, 50), datetime.datetime(2025, 4, 5, 22, 45), 'Свои')
+2025-09-26 19:05:30,173 INFO sqlalchemy.engine.Engine INSERT INTO users_travel (travel_id, users_id) VALUES ($1, $2)
+2025-09-26 19:05:30,174 INFO sqlalchemy.engine.Engine [cached since 0.2679s ago] (1, 1)
+2025-09-26 19:05:30,174 INFO sqlalchemy.engine.Engine INSERT INTO users_travel (travel_id, users_id) VALUES ($1, $2)
+2025-09-26 19:05:30,174 INFO sqlalchemy.engine.Engine [cached since 0.2687s ago] (2, 1)
+2025-09-26 19:05:30,175 INFO sqlalchemy.engine.Engine COMMIT
+2025-09-26 19:05:30,177 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-09-26 19:05:30,177 INFO sqlalchemy.engine.Engine DELETE FROM accommodations WHERE id = $1
+2025-09-26 19:05:30,177 INFO sqlalchemy.engine.Engine [generated in 0.00010s] (1,)
+2025-09-26 19:05:30,178 INFO sqlalchemy.engine.Engine COMMIT
+2025-09-26 19:05:30,179 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-09-26 19:05:30,179 INFO sqlalchemy.engine.Engine SELECT * FROM accommodations WHERE id = $1
+2025-09-26 19:05:30,179 INFO sqlalchemy.engine.Engine [cached since 0.1316s ago] (1,)
+2025-09-26 19:05:30,180 INFO sqlalchemy.engine.Engine ROLLBACK
