@@ -131,16 +131,20 @@ jobs:
       - name: Run integration tests
         run: |
           if [ "${{ needs.unit-tests.result }}" != "success" ]; then
-            # Создаем фиктивный тест для skipped
+            echo "Unit tests failed, running skipped test for integration"
             mkdir -p tests/integration
             echo "import pytest
             @pytest.mark.skip(reason='Unit tests failed, integration skipped')
             def test_skipped(): pass
             " > tests/integration/skipped_integration.py
+            poetry run pytest tests/integration/skipped_integration.py -v \
+              --alluredir=allure-results/integration \
+              --junitxml=test-reports/integration-tests.xml
+          else
+            poetry run pytest tests/integration/ -v \
+              --alluredir=allure-results/integration \
+              --junitxml=test-reports/integration-tests.xml
           fi
-          poetry run pytest tests/integration/ -v \
-            --alluredir=allure-results/integration \
-            --junitxml=test-reports/integration-tests.xml
         env:
           DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
           TEST_ENV: integration
@@ -225,17 +229,22 @@ jobs:
       - name: Run e2e tests
         run: |
           if [ "${{ needs.integration-tests.result }}" != "success" ]; then
+            echo "Integration tests failed, running skipped test for E2E"
             mkdir -p tests/e2e
             echo "import pytest
             @pytest.mark.skip(reason='Integration tests failed, E2E skipped')
             def test_skipped(): pass
             " > tests/e2e/skipped_e2e.py
+            poetry run pytest tests/e2e/skipped_e2e.py -v \
+              --alluredir=allure-results/e2e \
+              --junitxml=test-reports/e2e-tests.xml
+          else
+            poetry run pytest tests/e2e/ -v \
+              --alluredir=allure-results/e2e \
+              --junitxml=test-reports/e2e-tests.xml
           fi
-          poetry run pytest tests/e2e/ -v \
-            --alluredir=allure-results/e2e \
-            --junitxml=test-reports/e2e-tests.xml
         env:
-          DATABASE_URL: postgresql+asyncpg://test_user:test_password@est-db:5432/test_db
+          DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
           BASE_URL: http://localhost:8000
           TEST_ENV: e2e
 
@@ -290,49 +299,28 @@ jobs:
           name: e2e-test-results
           path: downloaded-artifacts/e2e
 
-      - name: Check downloaded artifacts
-        run: |
-          echo "Downloaded artifacts structure:"
-          find downloaded-artifacts -type f -name "*.xml" -o -name "*.json" | head -20
-          echo "Unit test results:"
-          ls -la downloaded-artifacts/unit/ || echo "No unit results"
-          echo "Integration test results:"
-          ls -la downloaded-artifacts/integration/ || echo "No integration results"
-
       - name: Merge Allure results
         run: |
           mkdir -p merged-allure-results
           
-          # Копируем результаты unit тестов
+          # Unit тесты
           if [ -d "downloaded-artifacts/unit/allure-results/unit" ]; then
             cp -r downloaded-artifacts/unit/allure-results/unit/* merged-allure-results/ || true
           fi
-          
-          # Копируем результаты integration тестов
+
+          # Integration тесты
           if [ -d "downloaded-artifacts/integration/allure-results/integration" ]; then
             cp -r downloaded-artifacts/integration/allure-results/integration/* merged-allure-results/ || true
           fi
 
+          # E2E тесты
           if [ -d "downloaded-artifacts/e2e/allure-results/e2e" ]; then
             cp -r downloaded-artifacts/e2e/allure-results/e2e/* merged-allure-results/ || true
-          else
-            echo "No E2E results found, marking tests as skipped"
-            # Можно создать заглушку Allure для skipped
-            mkdir -p merged-allure-results
-            echo '{"name":"E2E tests skipped","status":"skipped"}' > merged-allure-results/skipped-e2e.json
           fi
-          
-          # Альтернативный путь для результатов
-          if [ -d "downloaded-artifacts/unit" ]; then
-            find downloaded-artifacts/unit -name "*.json" -exec cp {} merged-allure-results/ \; || true
-          fi
-          
-          if [ -d "downloaded-artifacts/integration" ]; then
-            find downloaded-artifacts/integration -name "*.json" -exec cp {} merged-allure-results/ \; || true
-          fi
-          
+
           echo "Merged Allure results:"
           ls -la merged-allure-results/ || echo "No merged results"
+
 
       - name: Generate Allure Report
         run: |
