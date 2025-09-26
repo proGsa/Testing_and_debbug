@@ -215,7 +215,7 @@ jobs:
         run: |
           echo "Running DB init scripts..."
           for script in db-init/*.sql; do
-            psql postgresql://test_user:test_password@localhost:5432/travel_db -f "$script"
+            psql postgresql://nastya:nastya@localhost:5432/travel_db -f "$script"
           done
 
       - name: Run FastAPI app in background
@@ -225,7 +225,7 @@ jobs:
 
       - name: Check test user in DB
         run: |
-          psql postgresql://test_user:test_password@localhost:5432/travel_db -c "SELECT login, password FROM travel_db.users LIMIT 5;"
+          psql postgresql://nastya:nastya@localhost:5432/travel_db -c "SELECT login, password FROM travel_db.users LIMIT 5;"
 
       # - name: Check database structure
       #   run: |
@@ -269,7 +269,7 @@ jobs:
               --junitxml=test-reports/e2e-tests.xml
           fi
         env:
-          DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/travel_db
+          DATABASE_URL: postgresql+asyncpg://nastya:nastya@localhost:5432/travel_db
           BASE_URL: http://localhost:8000
           TEST_ENV: e2e
 
