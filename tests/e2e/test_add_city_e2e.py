@@ -2,6 +2,7 @@
 import pytest
 import allure
 import httpx
+import os
 from faker import Faker
 
 fake = Faker('ru_RU')
@@ -12,7 +13,8 @@ fake = Faker('ru_RU')
 class TestCityManagementE2E:
     @pytest.mark.asyncio
     async def test_login_and_add_city_api(self):
-        async with httpx.AsyncClient(base_url="http://localhost:8000") as client:
+        base_url = os.getenv("BASE_URL", "http://localhost:8000")
+        async with httpx.AsyncClient(base_url=base_url) as client:
             with allure.step("Prepare login data"):
                 login_data = {"login": "admin1", "password": "123!e5T78"}
 
