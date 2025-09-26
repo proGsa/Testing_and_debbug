@@ -233,6 +233,7 @@ jobs:
             SELECT current_database();
             SELECT schema_name FROM information_schema.schemata WHERE schema_name = 'travel_db';
             SELECT table_name FROM information_schema.tables WHERE table_schema = 'travel_db';
+            SELECT login, password FROM travel_db.users LIMIT 5;
           "
           
           # 2. Проверим приложение
@@ -242,7 +243,7 @@ jobs:
           
           # 3. Проверим login endpoint
           echo "3. Login endpoint check:"
-          curl -X POST http://localhost:8000/login \
+          curl -X POST http://localhost:8000/api/login \
               -H "Content-Type: application/json" \
               -d '{"login":"admin1","password":"123!e5T78"}' -v || echo "Login endpoint test"
       - name: Run e2e tests
