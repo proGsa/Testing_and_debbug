@@ -223,7 +223,6 @@ jobs:
           psql postgresql://test_user:test_password@localhost:5432/test_db -c "SELECT login, password FROM travel_db.users LIMIT 5;"
 
       - name: Run e2e tests
-        continue-on-error: true
         run: |
           if [ "${{ needs.integration-tests.result }}" != "success" ]; then
             mkdir -p tests/e2e
@@ -236,7 +235,7 @@ jobs:
             --alluredir=allure-results/e2e \
             --junitxml=test-reports/e2e-tests.xml
         env:
-          DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/mydb
+          DATABASE_URL: postgresql+asyncpg://test_user:test_password@est-db:5432/test_db
           BASE_URL: http://localhost:8000
           TEST_ENV: e2e
 
