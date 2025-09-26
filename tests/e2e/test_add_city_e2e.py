@@ -14,7 +14,7 @@ class TestAuthenticationE2ESimple:
     async def test_login_and_add_city_api(self):
         async with httpx.AsyncClient(base_url="http://localhost:8000") as client:
             with allure.step("Prepare login data"):
-                login_data = {"login": "admin1", "password": "123!e5T78"}
+                login_data = {"login": "admin1", "password": "$2b$12$OoiH5pmFNbJn4lj77or/9.zJvXcLMND58wxUZgSwc0nHSfme9KvAm"}
 
             with allure.step("Send login request"):
                 resp = await client.post("/api/login", json=login_data)
