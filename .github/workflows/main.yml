@@ -215,7 +215,7 @@ jobs:
         run: |
           echo "Running DB init scripts..."
           for script in db-init/*.sql; do
-            psql postgresql://test_user:test_password@localhost:5432/test_db -f "$script"
+            psql postgresql://test_user:test_password@localhost:5432/travel_db -f "$script"
           done
 
       - name: Run FastAPI app in background
@@ -225,31 +225,31 @@ jobs:
 
       - name: Check test user in DB
         run: |
-          psql postgresql://test_user:test_password@localhost:5432/test_db -c "SELECT login, password FROM travel_db.users LIMIT 5;"
+          psql postgresql://test_user:test_password@localhost:5432/travel_db -c "SELECT login, password FROM travel_db.users LIMIT 5;"
 
-      - name: Check database structure
-        run: |
-          echo "=== Database Diagnostics ==="
+      # - name: Check database structure
+      #   run: |
+      #     echo "=== Database Diagnostics ==="
           
-          # Проверим существующие базы данных
-          psql postgresql://nastya:nastya@localhost:5432/postgres -c "SELECT datname FROM pg_database WHERE datistemplate = false;"
+      #     # Проверим существующие базы данных
+      #     psql postgresql://nastya:nastya@localhost:5432/postgres -c "SELECT datname FROM pg_database WHERE datistemplate = false;"
           
-          # Проверим схему travel_db в базе travel_db
-          echo "Checking travel_db database:"
-          psql postgresql://nastya:nastya@localhost:5432/travel_db -c "\dn"  # Схемы
-          psql postgresql://nastya:nastya@localhost:5432/travel_db -c "\dt"  # Таблицы
+      #     # Проверим схему travel_db в базе travel_db
+      #     echo "Checking travel_db database:"
+      #     psql postgresql://nastya:nastya@localhost:5432/travel_db -c "\dn"  # Схемы
+      #     psql postgresql://nastya:nastya@localhost:5432/travel_db -c "\dt"  # Таблицы
           
-          # Проверим схему travel_db в базе test_db  
-          echo "Checking test_db database:"
-          psql postgresql://nastya:nastya@localhost:5432/test_db -c "\dn"    # Схемы
-          psql postgresql://nastya:nastya@localhost:5432/test_db -c "\dt"    # Таблицы
+      #     # Проверим схему travel_db в базе test_db  
+      #     echo "Checking test_db database:"
+      #     psql postgresql://nastya:nastya@localhost:5432/test_db -c "\dn"    # Схемы
+      #     psql postgresql://nastya:nastya@localhost:5432/test_db -c "\dt"    # Таблицы
           
-          # Проверим пользователей в обеих базах
-          echo "Users in travel_db:"
-          psql postgresql://nastya:nastya@localhost:5432/travel_db -c "SELECT login FROM users LIMIT 5;" || echo "No users table"
+      #     # Проверим пользователей в обеих базах
+      #     echo "Users in travel_db:"
+      #     psql postgresql://nastya:nastya@localhost:5432/travel_db -c "SELECT login FROM users LIMIT 5;" || echo "No users table"
           
-          echo "Users in test_db:"
-          psql postgresql://nastya:nastya@localhost:5432/test_db -c "SELECT login FROM travel_db.users LIMIT 5;" || echo "No travel_db schema"
+      #     echo "Users in test_db:"
+      #     psql postgresql://nastya:nastya@localhost:5432/test_db -c "SELECT login FROM travel_db.users LIMIT 5;" || echo "No travel_db schema"
       
       - name: Run e2e tests
         run: |
