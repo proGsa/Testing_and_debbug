@@ -7,9 +7,9 @@ from faker import Faker
 fake = Faker('ru_RU')
 
 
-@allure.feature("E2E Authentication API")
-@allure.story("User Authentication Flow")
-class TestAuthenticationE2ESimple:
+@allure.feature("E2E City Management")
+@allure.story("Login and add city flow")
+class TestCityManagementE2E:
     @pytest.mark.asyncio
     async def test_login_and_add_city_api(self):
         async with httpx.AsyncClient(base_url="http://localhost:8000") as client:

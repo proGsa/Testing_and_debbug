@@ -225,6 +225,18 @@ jobs:
       - name: Check test user in DB
         run: |
           psql postgresql://test_user:test_password@localhost:5432/test_db -c "SELECT login, password FROM travel_db.users LIMIT 5;"
+      
+      - name: Diagnostic check
+        run: |
+          # Проверим какая база данных используется
+          echo "Database check:"
+          psql postgresql://nastya:nastya@localhost:5432/travel_db -c "SELECT current_database(), version();"
+          
+          # Проверим таблицы
+          psql postgresql://nastya:nastya@localhost:5432/travel_db -c "\dt"
+          
+          # Проверим пользователей
+          psql postgresql://nastya:nastya@localhost:5432/travel_db -c "SELECT login, password FROM users LIMIT 5;"
 
       - name: Run e2e tests
         run: |
