@@ -176,8 +176,8 @@ jobs:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_USER: test_user
-          POSTGRES_PASSWORD: test_password
+          POSTGRES_USER: nastya
+          POSTGRES_PASSWORD: nastya
           POSTGRES_DB: test_db
         ports:
           - 5432:5432
@@ -358,6 +358,18 @@ jobs:
           echo "Merged Allure results:"
           ls -la merged-allure-results/ || echo "No merged results"
 
+        - name: Restore Allure history
+        uses: actions/download-artifact@v4
+        with:
+          name: allure-history
+          path: allure-history
+        continue-on-error: true
+
+      - name: Merge history
+        run: |
+          if [ -d "allure-history/history" ]; then
+            cp -r allure-history/history merged-allure-results/ || true
+          fi
 
       - name: Generate Allure Report
         run: |
@@ -372,6 +384,11 @@ jobs:
             mkdir -p allure-report
             echo "<html><body><h1>No test results available</h1></body></html>" > allure-report/index.html
           fi
+      - name: Save Allure history
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-history
+          path: allure-report/history
 
       - name: Deploy Allure Report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
