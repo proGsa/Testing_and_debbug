@@ -88,7 +88,7 @@ async def event_loop() -> AsyncGenerator[asyncio.AbstractEventLoop]:
     loop.close()
 
 
-engine = create_async_engine("postgresql+asyncpg://test_user:test_password@test-db:5432/test_db", echo=True)
+engine = create_async_engine("postgresql+asyncpg://test_user:test_password@localhost:5432/test_db", echo=True)
 AsyncSessionMaker: async_sessionmaker[AsyncSession] = async_sessionmaker(bind=engine, expire_on_commit=False)
 
 
