@@ -178,11 +178,11 @@ jobs:
         env:
           POSTGRES_USER: nastya
           POSTGRES_PASSWORD: nastya
-          POSTGRES_DB: test_db
+          POSTGRES_DB: travel_db
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U test_user -d test_db"
+          --health-cmd="pg_isready -U test_user -d travel_db"
           --health-interval=5s
           --health-timeout=5s
           --health-retries=5
