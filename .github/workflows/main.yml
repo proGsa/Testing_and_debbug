@@ -211,6 +211,7 @@ jobs:
         run: |
           mkdir -p allure-results/e2e
           mkdir -p test-reports
+
       - name: Initialize test database
         run: |
           echo "Running DB init scripts..."
@@ -221,6 +222,9 @@ jobs:
         run: |
           nohup poetry run uvicorn src.main:app --host 0.0.0.0 --port 8000 &
           sleep 5
+      - name: Check test user in DB
+        run: |
+          psql postgresql://test_user:test_password@localhost:5432/test_db -c "SELECT login, password FROM users LIMIT 5;"
 
       - name: Run e2e tests
         run: |
