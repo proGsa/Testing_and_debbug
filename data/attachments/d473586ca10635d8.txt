@@ -1,0 +1,1 @@
+ERROR    services.city_service:city_service.py:49 Город с ID 123 не найден.

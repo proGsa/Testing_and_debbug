@@ -1,0 +1,1 @@
+ERROR    services.travel_service:travel_service.py:78 Ошибка при получении пользователей для путешествия 1

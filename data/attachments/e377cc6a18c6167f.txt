@@ -1,0 +1,1 @@
+ERROR    services.route_service:route_service.py:62 Не удалось добавить город 2 в маршрут

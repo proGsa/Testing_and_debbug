@@ -1,0 +1,1 @@
+ERROR    services.entertainment_service:entertainment_service.py:45 Развлечение с ID 123 не найдено.

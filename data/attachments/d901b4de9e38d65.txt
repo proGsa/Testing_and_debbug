@@ -1,0 +1,1 @@
+ERROR    services.travel_service:travel_service.py:86 Ошибка при получении развлечений для путешествия 1

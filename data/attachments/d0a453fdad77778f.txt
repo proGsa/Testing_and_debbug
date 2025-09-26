@@ -1,0 +1,3 @@
+Create city response: 200
+HTML page status: 200
+HTML content length: 24305

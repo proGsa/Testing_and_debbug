@@ -1,0 +1,1 @@
+ERROR    services.travel_service:travel_service.py:126 Ошибка при получении активных путешествий
