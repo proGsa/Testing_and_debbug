@@ -178,11 +178,11 @@ jobs:
         env:
           POSTGRES_USER: nastya
           POSTGRES_PASSWORD: nastya
-          POSTGRES_DB: travel_db
+          POSTGRES_DB: mydb
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U test_user -d travel_db"
+          --health-cmd="pg_isready -U test_user -d mydb"
           --health-interval=5s
           --health-timeout=5s
           --health-retries=5
@@ -215,7 +215,7 @@ jobs:
         run: |
           echo "Running DB init scripts..."
           for script in db-init/*.sql; do
-            psql postgresql://nastya:nastya@localhost:5432/travel_db -f "$script"
+            psql postgresql://nastya:nastya@localhost:5432/mydb -f "$script"
           done
 
       - name: Run FastAPI app in background
@@ -225,7 +225,7 @@ jobs:
 
       - name: Check test user in DB
         run: |
-          psql postgresql://nastya:nastya@localhost:5432/travel_db -c "SELECT login, password FROM travel_db.users LIMIT 5;"
+          psql postgresql://nastya:nastya@localhost:5432/mydb -c "SELECT login, password FROM mydb.users LIMIT 5;"
 
       # - name: Check database structure
       #   run: |
@@ -234,22 +234,22 @@ jobs:
       #     # Проверим существующие базы данных
       #     psql postgresql://nastya:nastya@localhost:5432/postgres -c "SELECT datname FROM pg_database WHERE datistemplate = false;"
           
-      #     # Проверим схему travel_db в базе travel_db
-      #     echo "Checking travel_db database:"
-      #     psql postgresql://nastya:nastya@localhost:5432/travel_db -c "\dn"  # Схемы
-      #     psql postgresql://nastya:nastya@localhost:5432/travel_db -c "\dt"  # Таблицы
+      #     # Проверим схему mydb в базе mydb
+      #     echo "Checking mydb database:"
+      #     psql postgresql://nastya:nastya@localhost:5432/mydb -c "\dn"  # Схемы
+      #     psql postgresql://nastya:nastya@localhost:5432/mydb -c "\dt"  # Таблицы
           
-      #     # Проверим схему travel_db в базе test_db  
+      #     # Проверим схему mydb в базе test_db  
       #     echo "Checking test_db database:"
       #     psql postgresql://nastya:nastya@localhost:5432/test_db -c "\dn"    # Схемы
       #     psql postgresql://nastya:nastya@localhost:5432/test_db -c "\dt"    # Таблицы
           
       #     # Проверим пользователей в обеих базах
-      #     echo "Users in travel_db:"
-      #     psql postgresql://nastya:nastya@localhost:5432/travel_db -c "SELECT login FROM users LIMIT 5;" || echo "No users table"
+      #     echo "Users in mydb:"
+      #     psql postgresql://nastya:nastya@localhost:5432/mydb -c "SELECT login FROM users LIMIT 5;" || echo "No users table"
           
       #     echo "Users in test_db:"
-      #     psql postgresql://nastya:nastya@localhost:5432/test_db -c "SELECT login FROM travel_db.users LIMIT 5;" || echo "No travel_db schema"
+      #     psql postgresql://nastya:nastya@localhost:5432/test_db -c "SELECT login FROM mydb.users LIMIT 5;" || echo "No mydb schema"
       
       - name: Run e2e tests
         run: |
@@ -269,7 +269,7 @@ jobs:
               --junitxml=test-reports/e2e-tests.xml
           fi
         env:
-          DATABASE_URL: postgresql+asyncpg://nastya:nastya@localhost:5432/travel_db
+          DATABASE_URL: postgresql+asyncpg://nastya:nastya@localhost:5432/mydb
           BASE_URL: http://localhost:8000
           TEST_ENV: e2e
 
@@ -339,33 +339,11 @@ jobs:
       - name: Merge Allure results
         run: |
           mkdir -p merged-allure-results
-          
-          # Unit тесты
-          if [ -d "downloaded-artifacts/unit/allure-results/unit" ]; then
-            cp -r downloaded-artifacts/unit/allure-results/unit/* merged-allure-results/ || true
-          fi
-
-          # Integration тесты
-          if [ -d "downloaded-artifacts/integration/allure-results/integration" ]; then
-            cp -r downloaded-artifacts/integration/allure-results/integration/* merged-allure-results/ || true
-          fi
-
-          # E2E тесты
-          if [ -d "downloaded-artifacts/e2e/allure-results/e2e" ]; then
-            cp -r downloaded-artifacts/e2e/allure-results/e2e/* merged-allure-results/ || true
-          fi
-
-          echo "Merged Allure results:"
-          ls -la merged-allure-results/ || echo "No merged results"
+          cp -r downloaded-artifacts/unit/allure-results/unit/* merged-allure-results/ || true
+          cp -r downloaded-artifacts/integration/allure-results/integration/* merged-allure-results/ || true
+          cp -r downloaded-artifacts/e2e/allure-results/e2e/* merged-allure-results/ || true
 
       - name: Restore Allure history
-        uses: actions/download-artifact@v4
-        with:
-          name: allure-history
-          path: allure-history
-        continue-on-error: true
-
-      - name: Merge history
         run: |
           if [ -d "allure-history/history" ]; then
             cp -r allure-history/history merged-allure-results/ || true
@@ -375,10 +353,8 @@ jobs:
         run: |
           if [ "$(ls -A merged-allure-results/ 2>/dev/null)" ]; then
             echo "Generating Allure report from test results..."
-            allure generate merged-allure-results/ -o allure-report --clean
-            echo "Allure report generated successfully"
+            allure generate merged-allure-results/ -o allure-report
           else
-            echo "No test results found for Allure report generation"
             mkdir -p allure-report
             echo "<html><body><h1>No test results available</h1></body></html>" > allure-report/index.html
           fi
