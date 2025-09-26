@@ -27,18 +27,18 @@ class TestCityManagementE2E:
             headers = {"Authorization": f"Bearer {token}"}
 
             with allure.step("Create new city 'Сочи'"):
-            try:
-                create_resp = await client.post("/api/cities", json={"name": "Сочи"}, headers=headers)
-            except:
-                create_resp = await client.post("/api/cities", data={"name": "Сочи"}, headers=headers)
-            
-            print(f"Create city response: {create_resp.status_code}")
-            assert create_resp.status_code in (200, 201)
+                try:
+                    create_resp = await client.post("/api/cities", json={"name": "Сочи"}, headers=headers)
+                except:
+                    create_resp = await client.post("/api/cities", data={"name": "Сочи"}, headers=headers)
+                
+                print(f"Create city response: {create_resp.status_code}")
+                assert create_resp.status_code in (200, 201)
 
-        with allure.step("Verify city via HTML page"):
-            list_resp = await client.get("/city.html", headers=headers)
-            print(f"HTML page status: {list_resp.status_code}")
-            print(f"HTML content length: {len(list_resp.text)}")
-            
-            assert list_resp.status_code == 200
-            assert "Сочи" in list_resp.text
+            with allure.step("Verify city via HTML page"):
+                list_resp = await client.get("/city.html", headers=headers)
+                print(f"HTML page status: {list_resp.status_code}")
+                print(f"HTML content length: {len(list_resp.text)}")
+                
+                assert list_resp.status_code == 200
+                assert "Сочи" in list_resp.text
