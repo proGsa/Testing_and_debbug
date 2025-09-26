@@ -165,7 +165,8 @@ jobs:
             allure-results/integration/
             test-reports/integration-tests.xml
         if: always()
-    e2e-tests:
+        
+  e2e-tests:
     runs-on: ubuntu-latest
     needs: integration-tests
     if: needs.integration-tests.result == 'success'
