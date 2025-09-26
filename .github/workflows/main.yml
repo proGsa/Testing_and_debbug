@@ -211,7 +211,12 @@ jobs:
         run: |
           mkdir -p allure-results/e2e
           mkdir -p test-reports
-
+      - name: Initialize test database
+        run: |
+          echo "Running DB init scripts..."
+          for script in db-init/*.sql; do
+            psql postgresql://test_user:test_password@localhost:5432/test_db -f "$script"
+          done
       - name: Run FastAPI app in background
         run: |
           nohup poetry run uvicorn src.main:app --host 0.0.0.0 --port 8000 &
