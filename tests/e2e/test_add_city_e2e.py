@@ -12,7 +12,7 @@ fake = Faker('ru_RU')
 class TestAuthenticationE2ESimple:
     @pytest.mark.asyncio
     async def test_login_and_add_city_api(self):
-        async with httpx.AsyncClient(base_url="http://app:8000") as client:
+        async with httpx.AsyncClient(base_url="http://localhost:8000") as client:
             with allure.step("Prepare login data"):
                 login_data = {"login": "admin1", "password": "123!e5T78"}
 
