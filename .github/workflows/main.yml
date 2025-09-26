@@ -7,163 +7,163 @@ on:
     branches: [ main ]
 
 jobs:
-  # unit-tests:
-  #   runs-on: ubuntu-latest
-  #   continue-on-error: false
-  #   env:
-  #     PYTHONPATH: ${{ github.workspace }}/src
+  unit-tests:
+    runs-on: ubuntu-latest
+    continue-on-error: false
+    env:
+      PYTHONPATH: ${{ github.workspace }}/src
 
-  #   services:
-  #     postgres:
-  #       image: postgres:15
-  #       env:
-  #         POSTGRES_USER: test_user
-  #         POSTGRES_PASSWORD: test_password
-  #         POSTGRES_DB: test_db
-  #       ports:
-  #         - 5432:5432
-  #       options: >-
-  #         --health-cmd="pg_isready -U test_user -d test_db"
-  #         --health-interval=5s
-  #         --health-timeout=5s
-  #         --health-retries=5
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U test_user -d test_db"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=5
 
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-  #     - name: Set up Python
-  #       uses: actions/setup-python@v5
-  #       with:
-  #         python-version: "3.13"
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
 
-  #     - name: Install Poetry
-  #       run: |
-  #         curl -sSL https://install.python-poetry.org | python3 -
-  #         echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-  #     - name: Install dependencies
-  #       run: |
-  #         poetry install --with dev
-  #         poetry run pip install allure-pytest
+      - name: Install dependencies
+        run: |
+          poetry install --with dev
+          poetry run pip install allure-pytest
 
-  #     - name: Create directories for test results
-  #       run: |
-  #         mkdir -p allure-results/unit
-  #         mkdir -p test-reports
+      - name: Create directories for test results
+        run: |
+          mkdir -p allure-results/unit
+          mkdir -p test-reports
 
-  #     - name: Run unit tests
-  #       run: |
-  #         poetry run pytest tests/unit/ -v \
-  #           --alluredir=allure-results/unit \
-  #           --junitxml=test-reports/unit-tests.xml
-  #       env:
-  #         DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
-  #         TEST_ENV: unit
+      - name: Run unit tests
+        run: |
+          poetry run pytest tests/unit/ -v \
+            --alluredir=allure-results/unit \
+            --junitxml=test-reports/unit-tests.xml
+        env:
+          DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
+          TEST_ENV: unit
 
-  #     - name: Ensure Allure unit results exist
-  #       run: |
-  #         if [ ! -d "allure-results/unit" ] || [ -z "$(ls -A allure-results/unit)" ]; then
-  #           echo '{
-  #             "name": "Unit tests skipped",
-  #             "status": "skipped",
-  #             "stage": "finished",
-  #             "steps": [],
-  #             "labels": [{"name":"suite","value":"Unit"}]
-  #           }' > allure-results/unit/skipped-unit.json
-  #         fi
+      - name: Ensure Allure unit results exist
+        run: |
+          if [ ! -d "allure-results/unit" ] || [ -z "$(ls -A allure-results/unit)" ]; then
+            echo '{
+              "name": "Unit tests skipped",
+              "status": "skipped",
+              "stage": "finished",
+              "steps": [],
+              "labels": [{"name":"suite","value":"Unit"}]
+            }' > allure-results/unit/skipped-unit.json
+          fi
 
-  #     - name: Upload unit test results
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: unit-test-results
-  #         path: |
-  #           allure-results/unit/
-  #           test-reports/unit-tests.xml
-  #       if: always()
+      - name: Upload unit test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results
+          path: |
+            allure-results/unit/
+            test-reports/unit-tests.xml
+        if: always()
 
-  # integration-tests:
-  #   runs-on: ubuntu-latest
-  #   needs: unit-tests
-  #   if: always() 
-  #   env:
-  #     PYTHONPATH: ${{ github.workspace }}/src
+  integration-tests:
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    if: always() 
+    env:
+      PYTHONPATH: ${{ github.workspace }}/src
 
-  #   services:
-  #     postgres:
-  #       image: postgres:15
-  #       env:
-  #         POSTGRES_USER: test_user
-  #         POSTGRES_PASSWORD: test_password
-  #         POSTGRES_DB: test_db
-  #       ports:
-  #         - 5432:5432
-  #       options: >-
-  #         --health-cmd="pg_isready -U test_user -d test_db"
-  #         --health-interval=5s
-  #         --health-timeout=5s
-  #         --health-retries=5
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U test_user -d test_db"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=5
 
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-  #     - name: Set up Python
-  #       uses: actions/setup-python@v5
-  #       with:
-  #         python-version: "3.13"
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
 
-  #     - name: Install Poetry
-  #       run: |
-  #         curl -sSL https://install.python-poetry.org | python3 -
-  #         echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-  #     - name: Install dependencies
-  #       run: |
-  #         poetry install --with dev
-  #         poetry run pip install allure-pytest
+      - name: Install dependencies
+        run: |
+          poetry install --with dev
+          poetry run pip install allure-pytest
 
-  #     - name: Create directories for test results
-  #       run: |
-  #         mkdir -p allure-results/integration
-  #         mkdir -p test-reports
+      - name: Create directories for test results
+        run: |
+          mkdir -p allure-results/integration
+          mkdir -p test-reports
 
-  #     - name: Run integration tests
-  #       run: |
-  #         if [ "${{ needs.unit-tests.result }}" != "success" ]; then
-  #           echo "Unit tests failed, running skipped test for integration"
-  #           mkdir -p tests/integration
-  #           echo "import pytest
-  #           @pytest.mark.skip(reason='Unit tests failed, integration skipped')
-  #           def test_skipped(): pass
-  #           " > tests/integration/skipped_integration.py
-  #           poetry run pytest tests/integration/skipped_integration.py -v \
-  #             --alluredir=allure-results/integration \
-  #             --junitxml=test-reports/integration-tests.xml
-  #         else
-  #           poetry run pytest tests/integration/ -v \
-  #             --alluredir=allure-results/integration \
-  #             --junitxml=test-reports/integration-tests.xml
-  #         fi
-  #       env:
-  #         DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
-  #         TEST_ENV: integration
+      - name: Run integration tests
+        run: |
+          if [ "${{ needs.unit-tests.result }}" != "success" ]; then
+            echo "Unit tests failed, running skipped test for integration"
+            mkdir -p tests/integration
+            echo "import pytest
+            @pytest.mark.skip(reason='Unit tests failed, integration skipped')
+            def test_skipped(): pass
+            " > tests/integration/skipped_integration.py
+            poetry run pytest tests/integration/skipped_integration.py -v \
+              --alluredir=allure-results/integration \
+              --junitxml=test-reports/integration-tests.xml
+          else
+            poetry run pytest tests/integration/ -v \
+              --alluredir=allure-results/integration \
+              --junitxml=test-reports/integration-tests.xml
+          fi
+        env:
+          DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
+          TEST_ENV: integration
 
-  #     - name: Check if Allure results were generated
-  #       run: |
-  #         echo "Checking Allure results directory:"
-  #         ls -la allure-results/integration/ || echo "No Allure results found"
-  #         echo "Checking test reports directory:"
-  #         ls -la test-reports/ || echo "No test reports found"
+      - name: Check if Allure results were generated
+        run: |
+          echo "Checking Allure results directory:"
+          ls -la allure-results/integration/ || echo "No Allure results found"
+          echo "Checking test reports directory:"
+          ls -la test-reports/ || echo "No test reports found"
 
-  #     - name: Upload integration test results
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: integration-test-results
-  #         path: |
-  #           allure-results/integration/
-  #           test-reports/integration-tests.xml
-  #       if: always()
+      - name: Upload integration test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: |
+            allure-results/integration/
+            test-reports/integration-tests.xml
+        if: always()
         
   e2e-tests:
     runs-on: ubuntu-latest
@@ -223,29 +223,6 @@ jobs:
           nohup poetry run uvicorn src.main:app --host 0.0.0.0 --port 8000 &
           sleep 5
 
-      - name: Diagnostic checks before tests
-        run: |
-          echo "=== Pre-test Diagnostics ==="
-          
-          # 1. Проверим базу данных
-          echo "1. Database check:"
-          psql postgresql://nastya:nastya@localhost:5432/mydb -c "
-            SELECT current_database();
-            SELECT schema_name FROM information_schema.schemata WHERE schema_name = 'travel_db';
-            SELECT table_name FROM information_schema.tables WHERE table_schema = 'travel_db';
-            SELECT login, password FROM travel_db.users LIMIT 5;
-          "
-          
-          # 2. Проверим приложение
-          echo "2. Application check:"
-          curl -v http://localhost:8000/health
-          curl -v http://localhost:8000/docs || echo "Docs not available"
-          
-          # 3. Проверим login endpoint
-          echo "3. Login endpoint check:"
-          curl -X POST http://localhost:8000/api/login \
-              -H "Content-Type: application/json" \
-              -d '{"login":"admin1","password":"123!e5T78"}' -v || echo "Login endpoint test"
       - name: Run e2e tests
         run: |
           poetry run pytest tests/e2e/ -v \
@@ -277,79 +254,139 @@ jobs:
             test-reports/e2e-tests.xml
         if: always()
 
-  # allure-report:
-  #   runs-on: ubuntu-latest
-  #   needs: [unit-tests, integration-tests, e2e-tests]
-  #   if: always()
+  allure-report:
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests, e2e-tests]
+    if: always()
     
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # Ключевое изменение: получаем историю из ветки gh-pages
+          ref: gh-pages
 
-  #     - name: Set up Python (for Allure)
-  #       uses: actions/setup-python@v5
-  #       with:
-  #         python-version: "3.13"
+      - name: Set up Python (for Allure)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
 
-  #     - name: Install Allure
-  #       run: |
-  #         sudo apt-get update
-  #         sudo apt-get install -y default-jre
-  #         wget https://github.com/allure-framework/allure2/releases/download/2.27.0/allure-2.27.0.tgz
-  #         tar -zxvf allure-2.27.0.tgz
-  #         sudo mv allure-2.27.0 /opt/allure
-  #         sudo ln -s /opt/allure/bin/allure /usr/local/bin/allure
+      - name: Install Allure
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y default-jre
+          wget https://github.com/allure-framework/allure2/releases/download/2.27.0/allure-2.27.0.tgz
+          tar -zxvf allure-2.27.0.tgz
+          sudo mv allure-2.27.0 /opt/allure
+          sudo ln -s /opt/allure/bin/allure /usr/local/bin/allure
 
-  #     - name: Download unit test results
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: unit-test-results
-  #         path: downloaded-artifacts/unit
+      - name: Download unit test results
+        uses: actions/download-artifact@v4
+        with:
+          name: unit-test-results
+          path: downloaded-artifacts/unit
 
-  #     - name: Download integration test results
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: integration-test-results
-  #         path: downloaded-artifacts/integration
+      - name: Download integration test results
+        uses: actions/download-artifact@v4
+        with:
+          name: integration-test-results
+          path: downloaded-artifacts/integration
       
-  #     - name: Download e2e test results
-  #       if: always()
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: e2e-test-results
-  #         path: downloaded-artifacts/e2e
+      - name: Download e2e test results
+        if: always()
+        uses: actions/download-artifact@v4
+        with:
+          name: e2e-test-results
+          path: downloaded-artifacts/e2e
 
-  #     - name: Merge Allure results
-  #       run: |
-  #         mkdir -p merged-allure-results
-  #         cp -r downloaded-artifacts/unit/allure-results/unit/* merged-allure-results/ || true
-  #         cp -r downloaded-artifacts/integration/allure-results/integration/* merged-allure-results/ || true
-  #         cp -r downloaded-artifacts/e2e/allure-results/e2e/* merged-allure-results/ || true
+      - name: Merge Allure results
+        run: |
+          mkdir -p merged-allure-results
+          cp -r downloaded-artifacts/unit/allure-results/unit/* merged-allure-results/ || true
+          cp -r downloaded-artifacts/integration/allure-results/integration/* merged-allure-results/ || true
+          cp -r downloaded-artifacts/e2e/allure-results/e2e/* merged-allure-results/ || true
 
-  #     - name: Restore Allure history
-  #       run: |
-  #         if [ -d "allure-history/history" ]; then
-  #           cp -r allure-history/history merged-allure-results/ || true
-  #         fi
+      - name: Restore Allure history from previous reports
+        run: |
+          # Копируем историю из предыдущих отчетов для трендов
+          if [ -d "allure-report/history" ]; then
+            echo "Copying existing history..."
+            cp -r allure-report/history merged-allure-results/ || true
+          else
+            echo "No existing history found, starting fresh..."
+          fi
 
-  #     - name: Generate Allure Report
-  #       run: |
-  #         if [ "$(ls -A merged-allure-results/ 2>/dev/null)" ]; then
-  #           echo "Generating Allure report from test results..."
-  #           allure generate merged-allure-results/ -o allure-report
-  #         else
-  #           mkdir -p allure-report
-  #           echo "<html><body><h1>No test results available</h1></body></html>" > allure-report/index.html
-  #         fi
+      - name: Generate Allure Report with trends
+        run: |
+          if [ "$(ls -A merged-allure-results/ 2>/dev/null)" ]; then
+            echo "Generating Allure report with trends..."
+            allure generate merged-allure-results/ -o allure-report --clean
+          else
+            mkdir -p allure-report
+            echo "<html><body><h1>No test results available</h1></body></html>" > allure-report/index.html
+          fi
 
-  #     - name: Save Allure history
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: allure-history
-  #         path: allure-report/history
+      - name: Prepare for GitHub Pages deployment
+        run: |
+          # Создаем .nojekyll файл для GitHub Pages
+          touch allure-report/.nojekyll
+          
+          # Создаем красивую главную страницу
+          cat > allure-report/README.md << 'EOF'
+          # Test Reports
+          
+          This directory contains automated test reports generated by Allure.
+          
+          - **Latest Report**: [index.html](index.html)
+          - **Trends**: Available in the Allure dashboard
+          
+          Reports are updated on every push to the main branch.
+          EOF
 
-  #     - name: Deploy Allure Report to GitHub Pages
-  #       uses: peaceiris/actions-gh-pages@v4
-  #       with:
-  #         github_token: ${{ secrets.GITHUB_TOKEN }}
-  #         publish_dir: allure-report
+      - name: Deploy Allure Report to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: allure-report
+          # Сохраняем историю между запусками
+          keep_files: true
+          force_orphan: false
+
+  # Дополнительный job для сбора метрик (опционально)
+  test-metrics:
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests, e2e-tests]
+    if: always()
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all test results
+        uses: actions/download-artifact@v4
+        with:
+          path: downloaded-artifacts
+
+      - name: Generate test metrics
+        run: |
+          # Создаем простой файл с метриками для трендов
+          mkdir -p test-metrics
+          
+          # Считаем результаты тестов
+          echo "Generating test metrics..."
+          
+          # Можно добавить скрипт для анализа JUnit XML файлов
+          cat > test-metrics/metrics.json << 'EOF'
+          {
+            "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+            "commit": "${{ github.sha }}",
+            "run_id": "${{ github.run_id }}"
+          }
+          EOF
+          
+      - name: Upload metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-metrics
+          path: test-metrics
+        if: always()
