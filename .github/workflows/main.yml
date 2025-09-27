@@ -254,7 +254,7 @@ jobs:
             test-reports/e2e-tests.xml
         if: always()
 
-  allure-report:
+    allure-report:
     runs-on: ubuntu-latest
     needs: [unit-tests, integration-tests, e2e-tests]
     if: always()
@@ -266,7 +266,7 @@ jobs:
       - name: Install Allure and unzip
         run: |
           sudo apt-get update
-          sudo apt-get install -y default-jre unzip
+          sudo apt-get install -y default-jre unzip tree
           wget -q https://github.com/allure-framework/allure2/releases/download/2.27.0/allure-2.27.0.tgz
           tar -zxvf allure-2.27.0.tgz
           sudo mv allure-2.27.0 /opt/allure
@@ -277,37 +277,69 @@ jobs:
         with:
           path: downloaded-artifacts
 
+      - name: Debug - Check downloaded structure
+        run: |
+          echo "=== Downloaded artifacts structure ==="
+          tree downloaded-artifacts || ls -la downloaded-artifacts/
+          echo "=== ZIP files ==="
+          find downloaded-artifacts -name "*.zip" -exec ls -la {} \;
+
       - name: Extract all zip files
         run: |
           mkdir -p extracted-results
-          find downloaded-artifacts -name "*.zip" -exec unzip -o {} -d extracted-results/ \; || echo "No zip files or extraction failed"
+          find downloaded-artifacts -name "*.zip" -exec sh -c 'unzip -o "$1" -d "extracted-results/$(basename "$1" .zip)"' _ {} \;
           
-          echo "=== Extracted files structure ==="
-          find extracted-results -type f -name "*.json" | head -10
+          echo "=== Extracted structure ==="
+          tree extracted-results || find extracted-results -type f | head -20
 
-      - name: Prepare Allure results
+      - name: Find and copy Allure results
         run: |
           mkdir -p merged-allure-results
           
-          # Копируем все JSON файлы из распакованных архивов
+          # Ищем файлы результатов в разных возможных местах
           find extracted-results -name "*.json" -exec cp {} merged-allure-results/ \; 2>/dev/null || true
+          find extracted-results -name "*.xml" -exec cp {} merged-allure-results/ \; 2>/dev/null || true
           
-          echo "Total JSON files found: $(find merged-allure-results -name '*.json' | wc -l)"
-          find merged-allure-results -name "*.json" | head -5
+          echo "=== Files in merged-allure-results ==="
+          ls -la merged-allure-results/ || echo "No files found"
+          
+          echo "=== Searching for specific paths ==="
+          find extracted-results -type f -name "*result*" -o -name "*test*" | head -20
+          find extracted-results -type d -name "allure-results" -o -name "results" | head -10
+
+      - name: Check specific artifact directories
+        run: |
+          echo "=== Checking e2e results ==="
+          find extracted-results -path "*/e2e*" -name "*.json" | head -10
+          
+          echo "=== Checking integration results ==="
+          find extracted-results -path "*/integration*" -name "*.json" | head -10
+          
+          echo "=== Checking unit results ==="
+          find extracted-results -path "*/unit*" -name "*.json" | head -10
 
       - name: Generate Allure Report
         run: |
-          json_count=$(find merged-allure-results -name '*.json' | wc -l)
-          echo "JSON files count: $json_count"
+          # Пробуем разные пути к результатам
+          possible_paths=(
+            "extracted-results"
+            "extracted-results/*/allure-results"
+            "extracted-results/*/allure-results/*"
+            "extracted-results/*/*/allure-results"
+          )
           
-          if [ "$json_count" -gt 0 ]; then
-            echo "Generating Allure report from $json_count files"
-            allure generate merged-allure-results/ -o allure-report --clean
-          else
-            echo "No JSON files found - checking what we have:"
-            find extracted-results -type f | head -20
+          for path in "${possible_paths[@]}"; do
+            if [ -d "$path" ] && [ $(find "$path" -name "*.json" 2>/dev/null | wc -l) -gt 0 ]; then
+              echo "Found results in: $path"
+              allure generate "$path" -o allure-report --clean
+              break
+            fi
+          done
+          
+          # Если ничего не нашли, создаем пустой отчет
+          if [ ! -f "allure-report/index.html" ]; then
             mkdir -p allure-report
-            echo "<html><body><h1>No test results found</h1><p>Checked extracted files but found no JSON results.</p></body></html>" > allure-report/index.html
+            echo "<html><body><h1>Debug Info</h1><p>No test results found. Check artifact structure.</p></body></html>" > allure-report/index.html
           fi
 
       - name: Deploy to GitHub Pages
