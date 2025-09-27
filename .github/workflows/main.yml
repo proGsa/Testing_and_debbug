@@ -312,7 +312,7 @@ jobs:
             echo "No existing history found - this is the first run"
           fi
 
-      - name: Generate Allure Report
+            - name: Generate Allure Report
         run: |
           if [ "$(find merged-allure-results -name '*.json' | wc -l)" -gt 0 ]; then
             echo "Generating Allure report from $(find merged-allure-results -name '*.json' | wc -l) files"
@@ -320,14 +320,14 @@ jobs:
           else
             echo "No test results found, creating empty report"
             mkdir -p allure-report
-            cat > allure-report/index.html << 'EOF'
+            cat > allure-report/index.html << 'HTML_EOF'
             <html>
               <body>
                 <h1>No test results available</h1>
                 <p>This is the first run or no tests were executed.</p>
               </body>
             </html>
-            EOF
+            HTML_EOF
           fi
           
           # Проверяем, создалась ли история
