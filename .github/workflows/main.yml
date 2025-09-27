@@ -254,14 +254,17 @@ jobs:
             test-reports/e2e-tests.xml
         if: always()
 
-  allure-report:
+    allure-report:
     runs-on: ubuntu-latest
     needs: [unit-tests, integration-tests, e2e-tests]
     if: always()
     
     steps:
-      - name: Checkout code
+      - name: Checkout code + history
         uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install Allure
         run: |
@@ -281,37 +284,53 @@ jobs:
         run: |
           mkdir -p merged-allure-results
           
-          # Копируем все JSON файлы из всех уровней тестирования
+          # Копируем историю из предыдущего отчета (если есть)
+          if [ -d "history" ]; then
+            echo "Copying existing history..."
+            cp -r history merged-allure-results/
+            echo "History files copied: $(find merged-allure-results/history -name '*.json' | wc -l)"
+          else
+            echo "No existing history found - starting fresh"
+          fi
+          
+          # Копируем новые JSON файлы результатов
           find downloaded-artifacts -name "*.json" -exec cp {} merged-allure-results/ \;
           
-          echo "Total JSON files copied: $(ls -1 merged-allure-results/*.json 2>/dev/null | wc -l)"
-          echo "Sample files:"
-          ls -la merged-allure-results/*.json | head -5
+          echo "Total JSON files: $(find merged-allure-results -name '*.json' | wc -l)"
 
-      - name: Generate Allure Report
+      - name: Generate Allure Report with history
         run: |
-          json_count=$(ls -1 merged-allure-results/*.json 2>/dev/null | wc -l)
-          echo "JSON files count: $json_count"
+          json_count=$(find merged-allure-results -name '*.json' | wc -l)
+          echo "Total JSON files for report: $json_count"
           
           if [ "$json_count" -gt 0 ]; then
-            echo "Generating Allure report from $json_count files"
+            echo "Generating Allure report with trends..."
             allure generate merged-allure-results/ -o allure-report --clean
-            echo "Report generated successfully!"
+            
+            # Проверяем что история создалась
+            if [ -d "allure-report/history" ]; then
+              echo "History directory created successfully"
+              echo "History items: $(ls allure-report/history/ | wc -l)"
+            else
+              echo "Warning: No history directory created"
+            fi
           else
-            echo "No JSON files found in merged-allure-results"
-            # Проверим что вообще есть в downloaded-artifacts
-            echo "=== Checking downloaded-artifacts structure ==="
-            find downloaded-artifacts -name "*.json" | head -10
             mkdir -p allure-report
-            echo "<html><body><h1>Test Reports</h1><p>No JSON result files found.</p></body></html>" > allure-report/index.html
+            echo "<html><body><h1>Test Reports</h1><p>No test results available.</p></body></html>" > allure-report/index.html
           fi
 
-      - name: Deploy to GitHub Pages
+      - name: Add .nojekyll file
+        run: |
+          touch allure-report/.nojekyll
+          echo "GitHub Pages configuration added"
+
+      - name: Deploy to GitHub Pages with history
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: allure-report
-          keep_files: true
+          keep_files: true  # Ключевая опция для сохранения истории
+          force_orphan: false
   # test-metrics:
   #   runs-on: ubuntu-latest
   #   needs: [unit-tests, integration-tests, e2e-tests]
