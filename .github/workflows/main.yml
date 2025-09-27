@@ -312,7 +312,7 @@ jobs:
             echo "No existing history found - this is the first run"
           fi
 
-            - name: Generate Allure Report
+      - name: Generate Allure Report
         run: |
           if [ "$(find merged-allure-results -name '*.json' | wc -l)" -gt 0 ]; then
             echo "Generating Allure report from $(find merged-allure-results -name '*.json' | wc -l) files"
