@@ -262,38 +262,52 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: gh-pages
 
-      - name: Set up Python (for Allure)
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-
-      - name: Install Allure
+      - name: Install Allure and unzip
         run: |
           sudo apt-get update
-          sudo apt-get install -y default-jre
-          wget https://github.com/allure-framework/allure2/releases/download/2.27.0/allure-2.27.0.tgz
+          sudo apt-get install -y default-jre unzip
+          wget -q https://github.com/allure-framework/allure2/releases/download/2.27.0/allure-2.27.0.tgz
           tar -zxvf allure-2.27.0.tgz
           sudo mv allure-2.27.0 /opt/allure
           sudo ln -s /opt/allure/bin/allure /usr/local/bin/allure
 
-      - name: Download all test results
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: downloaded-artifacts
 
+      - name: Extract all zip files
+        run: |
+          mkdir -p extracted-results
+          find downloaded-artifacts -name "*.zip" -exec unzip -o {} -d extracted-results/ \; || echo "No zip files or extraction failed"
+          
+          echo "=== Extracted files structure ==="
+          find extracted-results -type f -name "*.json" | head -10
+
+      - name: Prepare Allure results
+        run: |
+          mkdir -p merged-allure-results
+          
+          # Копируем все JSON файлы из распакованных архивов
+          find extracted-results -name "*.json" -exec cp {} merged-allure-results/ \; 2>/dev/null || true
+          
+          echo "Total JSON files found: $(find merged-allure-results -name '*.json' | wc -l)"
+          find merged-allure-results -name "*.json" | head -5
+
       - name: Generate Allure Report
         run: |
-          # Простая проверка наличия файлов
-          if [ $(ls merged-allure-results/*.json 2>/dev/null | wc -l) -gt 0 ]; then
-            echo "Generating Allure report"
+          json_count=$(find merged-allure-results -name '*.json' | wc -l)
+          echo "JSON files count: $json_count"
+          
+          if [ "$json_count" -gt 0 ]; then
+            echo "Generating Allure report from $json_count files"
             allure generate merged-allure-results/ -o allure-report --clean
           else
-            echo "No test results - creating simple report"
+            echo "No JSON files found - checking what we have:"
+            find extracted-results -type f | head -20
             mkdir -p allure-report
-            echo "<html><body><h1>Test Reports</h1><p>No test results available yet.</p></body></html>" > allure-report/index.html
+            echo "<html><body><h1>No test results found</h1><p>Checked extracted files but found no JSON results.</p></body></html>" > allure-report/index.html
           fi
 
       - name: Deploy to GitHub Pages
