@@ -284,81 +284,24 @@ jobs:
         with:
           path: downloaded-artifacts
 
-      - name: Merge Allure results
-        run: |
-          mkdir -p merged-allure-results
-          
-          # Копируем результаты из всех уровней тестирования
-          find downloaded-artifacts -name "*.json" -exec cp {} merged-allure-results/ \; || true
-          find downloaded-artifacts -name "*.xml" -exec cp {} merged-allure-results/ \; || true
-          
-          echo "Merged results:"
-          ls -la merged-allure-results/ | wc -l
-
-      - name: Checkout gh-pages for history
-        run: |
-          # Пробуем получить историю из gh-pages
-          git fetch origin gh-pages || echo "No gh-pages branch yet"
-          git worktree add gh-pages-worktree gh-pages || echo "Creating new gh-pages"
-
-      - name: Copy history from previous reports
-        run: |
-          if [ -d "gh-pages-worktree/history" ]; then
-            echo "Copying existing history..."
-            cp -r gh-pages-worktree/history merged-allure-results/ || true
-            echo "History copied:"
-            ls -la merged-allure-results/history/ || echo "No history files"
-          else
-            echo "No existing history found - this is the first run"
-          fi
-
       - name: Generate Allure Report
         run: |
-          if [ "$(find merged-allure-results -name '*.json' | wc -l)" -gt 0 ]; then
-            echo "Generating Allure report from $(find merged-allure-results -name '*.json' | wc -l) files"
+          # Простая проверка наличия файлов
+          if [ $(ls merged-allure-results/*.json 2>/dev/null | wc -l) -gt 0 ]; then
+            echo "Generating Allure report"
             allure generate merged-allure-results/ -o allure-report --clean
           else
-            echo "No test results found, creating empty report"
+            echo "No test results - creating simple report"
             mkdir -p allure-report
-            cat > allure-report/index.html << 'HTML_EOF'
-            <html>
-              <body>
-                <h1>No test results available</h1>
-                <p>This is the first run or no tests were executed.</p>
-              </body>
-            </html>
-            HTML_EOF
+            echo "<html><body><h1>Test Reports</h1><p>No test results available yet.</p></body></html>" > allure-report/index.html
           fi
-          
-          # Проверяем, создалась ли история
-          if [ -d "allure-report/history" ]; then
-            echo "History generated successfully:"
-            ls -la allure-report/history/
-          else
-            echo "Warning: No history directory was created"
-          fi
-
-      - name: Setup GitHub Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload artifact to GitHub Pages
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: allure-report
 
       - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Debug final state
-        run: |
-          echo "=== Final report structure ==="
-          find allure-report -type f -name "*.json" | head -10
-          echo "=== History contents ==="
-          find allure-report/history -type f 2>/dev/null | head -10 || echo "No history"
-
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: allure-report
+          keep_files: true
   # test-metrics:
   #   runs-on: ubuntu-latest
   #   needs: [unit-tests, integration-tests, e2e-tests]
