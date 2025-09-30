@@ -2,7 +2,7 @@
 services:
   app:
     build: .
-    image: ppo
+    image: test_and_debug
     ports:
       - "8000:8000"
     environment:
@@ -22,6 +22,7 @@ services:
         condition: service_healthy
     networks:
       - my_network
+      - monitoring
       
   test-db:
     image: postgres:15
@@ -73,8 +74,8 @@ services:
     depends_on:
       test-db:
         condition: service_healthy
-      unit-tests:
-        condition: service_completed_successfully
+      # unit-tests:
+        # condition: service_completed_successfully
     networks:
       - my_network
     command: >
@@ -87,19 +88,18 @@ services:
     container_name: e2e_tests_runner
     environment:
       DATABASE_URL: "postgresql+asyncpg://nastya:nastya@db:5432/mydb"
-      MONGO_URI: "mongodb://admin:password@mongodb:27017"
       TEST_ENV: "e2e"
       BASE_URL: "http://app:8000"
     volumes:
       - ./allure-results:/app/allure-results
       - ./test-reports:/app/test-reports
+      - ./captures:/app/captures
     depends_on:
       app:
         condition: service_healthy
-      integration-tests:
-        condition: service_completed_successfully
     networks:
       - my_network
+      - monitoring
     command: >
       sh -c "
         poetry run pytest tests/e2e/ -v --alluredir=/app/allure-results/e2e"
@@ -155,6 +155,21 @@ services:
       - my_network
     restart: unless-stopped 
 
+  tcpdump:
+    image: instrumentisto/tcpdump:latest  # Multi-arch образ
+    container_name: network_capture
+    command: [
+      "-i", "any",
+      "-w", "/captures/docker_traffic.pcap",
+      "host", "app", "or", "host", "e2e-tests-runner"
+    ]
+    volumes:
+      - ./captures:/captures
+    networks:
+      - my_network
+    privileged: true
+    profiles: ["capture"]
+
 volumes:
   postgres_data:
   postgres_test_data:
@@ -163,5 +178,6 @@ volumes:
 
 networks:
   my_network:
-    # name: test_debug_my_network
+    driver: bridge
+  monitoring:
     driver: bridge

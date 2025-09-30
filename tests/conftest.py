@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import uuid
 
 from datetime import datetime
 from typing import AsyncGenerator
@@ -33,7 +34,6 @@ from services.travel_service import TravelService
 from services.user_service import AuthService
 from services.user_service import UserService
 
-from playwright.async_api import async_playwright, Page
 
 @pytest.fixture
 def mock_city_repo() -> Mock:
@@ -88,250 +88,253 @@ async def event_loop() -> AsyncGenerator[asyncio.AbstractEventLoop]:
     loop.close()
 
 
-engine = create_async_engine("postgresql+asyncpg://test_user:test_password@localhost:5432/test_db", echo=True)
+# engine = create_async_engine("postgresql+asyncpg://test_user:test_password@test-db:5432/test_db", echo=True)
+engine = create_async_engine("postgresql+asyncpg://nastya:nastya@localhost:5434/mydb", echo=True)
+
 AsyncSessionMaker: async_sessionmaker[AsyncSession] = async_sessionmaker(bind=engine, expire_on_commit=False)
 
 
 @pytest_asyncio.fixture(scope="function")
 async def db_session() -> AsyncGenerator[AsyncSession]:
-    async with AsyncSessionMaker() as session:
-        try:
-            await session.commit()
-            await session.execute(text("DROP TABLE IF EXISTS travel_accommodations CASCADE"))
-            await session.execute(text("DROP TABLE IF EXISTS travel_entertainment CASCADE"))
-            await session.execute(text("DROP TABLE IF EXISTS users_travel CASCADE"))
-            await session.execute(text("DROP TABLE IF EXISTS entertainment CASCADE"))
-            await session.execute(text("DROP TABLE IF EXISTS accommodations CASCADE;"))
-            await session.execute(text("DROP TABLE IF EXISTS directory_route CASCADE"))
-            await session.execute(text("DROP TABLE IF EXISTS route CASCADE"))
-            await session.execute(text("DROP TABLE IF EXISTS users CASCADE"))
-            await session.execute(text("DROP TABLE IF EXISTS travel CASCADE"))
-            await session.execute(text("DROP TABLE IF EXISTS city CASCADE;"))
-
-            await session.execute(text("""
-                CREATE TABLE IF NOT EXISTS city (
-                    city_id SERIAL PRIMARY KEY,
-                    name VARCHAR NOT NULL UNIQUE
-                )
-                """))
-            await session.execute(text("""
-                CREATE TABLE entertainment (
-                    id SERIAL PRIMARY KEY,
-                    duration VARCHAR NOT NULL,
-                    address VARCHAR NOT NULL,
-                    event_name VARCHAR NOT NULL UNIQUE,
-                    event_time TIMESTAMP NOT NULL,
-                    city INTEGER REFERENCES city(city_id) ON DELETE CASCADE
-                )
-                """))
-            await session.execute(text("""
-                CREATE TABLE IF NOT EXISTS accommodations (
-                    id SERIAL PRIMARY KEY,
-                    price INTEGER NOT NULL,
-                    address VARCHAR NOT NULL,
-                    name VARCHAR NOT NULL UNIQUE,
-                    type VARCHAR NOT NULL,
-                    rating INTEGER NOT NULL,
-                    check_in TIMESTAMP NOT NULL,
-                    check_out TIMESTAMP NOT NULL, 
-                    city INTEGER NOT NULL REFERENCES city(city_id) ON DELETE CASCADE
-                )
-                """))
-            await session.execute(text("""
-                CREATE TABLE IF NOT EXISTS directory_route (
-                    id SERIAL PRIMARY KEY,
-                    type_transport VARCHAR NOT NULL,
-                    departure_city INT REFERENCES city(city_id) ON DELETE CASCADE,
-                    arrival_city INT REFERENCES city(city_id) ON DELETE CASCADE,
-                    distance INT NOT NULL ,
-                    price INT NOT NULL
-                )
-                """))
-            await session.execute(text("""
-                CREATE TABLE IF NOT EXISTS users (
-                    id SERIAL PRIMARY KEY,
-                    full_name VARCHAR NOT NULL,
-                    passport VARCHAR NOT NULL UNIQUE,
-                    phone VARCHAR NOT NULL UNIQUE,
-                    email VARCHAR NOT NULL UNIQUE,
-                    login VARCHAR NOT NULL UNIQUE,
-                    password VARCHAR NOT NULL,
-                    is_admin BOOLEAN NOT NULL DEFAULT FALSE
-                )
-                """))
-            await session.execute(text("""
-                CREATE TABLE IF NOT EXISTS travel (
-                    id SERIAL PRIMARY KEY,
-                    status VARCHAR NOT NULL,
-                    user_id INT NOT NULL
-                )
-                """))
-            await session.execute(text("""
-                CREATE TABLE IF NOT EXISTS travel_entertainment (
-                    id SERIAL PRIMARY KEY,
-                    travel_id INT NOT NULL,
-                    entertainment_id INT NOT NULL,
-                    CONSTRAINT fk_travel_id FOREIGN KEY (travel_id) REFERENCES travel(id) ON DELETE CASCADE,
-                    CONSTRAINT fk_entertainment_id FOREIGN KEY (entertainment_id) REFERENCES entertainment(id) ON DELETE CASCADE
-                )
-                """))
-            await session.execute(text("""
-                CREATE TABLE IF NOT EXISTS travel_accommodations (
-                    id SERIAL PRIMARY KEY,
-                    travel_id INT NOT NULL,
-                    accommodation_id INT NOT NULL,
-                    CONSTRAINT fk_travel_id FOREIGN KEY (travel_id) REFERENCES travel(id) ON DELETE CASCADE,
-                    CONSTRAINT fk_accommodation_id FOREIGN KEY (accommodation_id) REFERENCES accommodations(id) ON DELETE CASCADE
-                )
-                """))
-            await session.execute(text("""
-                CREATE TABLE IF NOT EXISTS users_travel (
-                    id SERIAL PRIMARY KEY,
-                    travel_id INT NOT NULL,
-                    users_id INT NOT NULL,
-                    CONSTRAINT fk_travel_id FOREIGN KEY (travel_id) REFERENCES travel(id) ON DELETE CASCADE,
-                    CONSTRAINT fk_users_id FOREIGN KEY (users_id) REFERENCES users(id) ON DELETE CASCADE
-                )
-                """))
-            await session.execute(text("""
-                CREATE TABLE IF NOT EXISTS route (
-                    id SERIAL PRIMARY KEY,
-                    d_route_id INT NOT NULL,
-                    travel_id INT NOT NULL,
-                    start_time TIMESTAMP NOT NULL,
-                    end_time TIMESTAMP NOT NULL,
-                    type VARCHAR(20) NOT NULL,
-                    CONSTRAINT fk_d_route_id FOREIGN KEY (d_route_id) REFERENCES directory_route(id) ON DELETE CASCADE,
-                    CONSTRAINT fk_travel_id FOREIGN KEY (travel_id) REFERENCES travel(id) ON DELETE CASCADE
-                )
-                """))
-
-            await session.execute(text("TRUNCATE entertainment RESTART IDENTITY CASCADE;"))
-            await session.execute(text("TRUNCATE accommodations RESTART IDENTITY CASCADE;"))
-            await session.execute(text("TRUNCATE directory_route RESTART IDENTITY CASCADE;"))
-            await session.execute(text("TRUNCATE travel_accommodations RESTART IDENTITY CASCADE"))
-            await session.execute(text("TRUNCATE travel_entertainment RESTART IDENTITY CASCADE"))
-            await session.execute(text("TRUNCATE users_travel RESTART IDENTITY CASCADE"))
-            await session.execute(text("TRUNCATE route RESTART IDENTITY CASCADE"))
-            await session.execute(text("TRUNCATE users RESTART IDENTITY CASCADE;"))
-            await session.execute(text("TRUNCATE travel RESTART IDENTITY CASCADE;"))
-            await session.execute(text("TRUNCATE city RESTART IDENTITY CASCADE;"))
+    schema_name = f"test_{uuid.uuid4().hex[:8]}"
+    
+    async with engine.begin() as conn:
+        await conn.execute(text(f"CREATE SCHEMA {schema_name}"))
+    
+    try:
+        async with AsyncSessionMaker() as session:
+            await session.execute(text(f"SET search_path TO {schema_name}"))
+            
+            await create_tables(session)
+            
+            await fill_test_data(session)
             await session.commit()
             
-            await session.execute(text("""
-                INSERT INTO city (name) VALUES 
-                ('Москва'), ('Воронеж'), ('Санкт-Петербург'), 
-                ('Екатеринбург'), ('Калининград')
-                """))
-            entertainment_data = [
-                {"duration": "4 часа", "address": "Главная площадь", "event_name": "Концерт", 
-                                                    "event_time": datetime(2025, 4, 10, 16, 0, 0), "city": 1},
-                {"duration": "3 часа", "address": "ул. Кузнецова, 4", "event_name": "Выставка", 
-                                                    "event_time": datetime(2025, 4, 5, 10, 0, 0), "city": 1}
-            ]
-            for data in entertainment_data:
-                await session.execute(text("""
-                    INSERT INTO entertainment 
-                    (duration, address, event_name, event_time, city) 
-                    VALUES (:duration, :address, :event_name, :event_time, :city)"""), data)
-            await session.commit()
-            accommodations_data = [
-                {"price": 33450, "address": "ул. Дмитриевского, 7", "name": "ABC",
-                  "type": "Квартира", "rating": 3, "check_in": datetime(2025, 4, 2, 14, 0, 0), "check_out": datetime(2025, 4, 6, 18, 0, 0), "city": 1},
-                {
-                    "price": 46840, "address": "Улица Гоголя, 12", "name": "Four Seasons",
-                    "type": "Отель", "rating": 5, "check_in": datetime(2025, 3, 29, 12, 30, 0), "check_out": datetime(2025, 4, 5, 18, 0, 0), "city": 1  
-                }
-            ]
-            
-            for data in accommodations_data:
-                await session.execute(text("""
-                    INSERT INTO accommodations 
-                    (price, address, name, type, rating, check_in, check_out, city) 
-                    VALUES (:price, :address, :name, :type, :rating, :check_in, :check_out, :city)
-                """), data)
+            try:
+                yield session
+            finally:
+                await session.rollback()
+                await session.close()
+    
+    finally:
+        async with engine.begin() as conn:
+            await conn.execute(text(f"DROP SCHEMA {schema_name} CASCADE"))
 
-            d_routes = [
-                {"type_transport": "Паром", "departure_city": 3, "arrival_city": 5, "distance": 966, "price": 3987},
-                {"type_transport": "Самолет", "departure_city": 3, "arrival_city": 5, "distance": 966, "price": 5123},
-                {"type_transport": "Автобус", "departure_city": 3, "arrival_city": 4, "distance": 1840, "price": 3796},
-                {"type_transport": "Поезд", "departure_city": 3, "arrival_city": 5, "distance": 966, "price": 2541},
-                {"type_transport": "Автобус", "departure_city": 3, "arrival_city": 5, "distance": 966, "price": 4756},
-                {"type_transport": "Самолет", "departure_city": 3, "arrival_city": 4, "distance": 1840, "price": 8322},
-                {"type_transport": "Поезд", "departure_city": 3, "arrival_city": 4, "distance": 1840, "price": 4305},
-                {"type_transport": "Самолет", "departure_city": 5, "arrival_city": 4, "distance": 3025, "price": 10650},
-                {"type_transport": "Поезд", "departure_city": 5, "arrival_city": 4, "distance": 3025, "price": 5988},
-                {"type_transport": "Самолет", "departure_city": 1, "arrival_city": 2, "distance": 467, "price": 2223},
-                {"type_transport": "Поезд", "departure_city": 1, "arrival_city": 2, "distance": 515, "price": 1911},
-                {"type_transport": "Поезд", "departure_city": 4, "arrival_city": 1, "distance": 1780, "price": 3500},
-            ]
-            for data in d_routes:
-                await session.execute(text("INSERT INTO directory_route (type_transport, departure_city, \
-                        arrival_city, distance, price) \
-                    VALUES (:type_transport, :departure_city, :arrival_city, :distance, :price)"), data)
-            users = [
-                {"fio": "Лобач Анастасия Олеговна", "number_passport": "1111111111", "phone_number": "89261111111", "email": "nastya@lobach.info", "login": "user1", "password": "123!e5T78"},
-                {"fio": "Иванов Иван Иванович", "number_passport": "2222222222", "phone_number": "89262222222", "email": "ivanov@ivanov.com", "login": "user2", "password": "456!f6R89"},
-                {"fio": "Петров Петр Петрович", "number_passport": "3333333333", "phone_number": "89263333333", "email": "petrov@petrov.com", "login": "user3", "password": "789!g7T90"}
-            ]
-            for user_data in users:
-                await session.execute(text("""
-                    INSERT INTO users (full_name, passport, phone, email, login, password, is_admin)
-                    VALUES (:fio, :number_passport, :phone_number, :email, :login, :password, false)
-                """), user_data)
-            
-            travels_data = [{"status": "В процессе", "user_id": 1}, {"status": "Завершен", "user_id": 1}]
-            tr_ent = [(1, 2), (2, 1)]
-            tr_a = [(1, 1), (2, 2)]
 
-            for i, travel_data in enumerate(travels_data, 1):
-                await session.execute(text("""
-                    INSERT INTO travel (id, status, user_id) VALUES (:id, :status, :user_id)
-                """), {"id": i, "status": travel_data["status"], "user_id": travel_data["user_id"]})
-            for t in tr_ent:
-                await session.execute(
-                    text("INSERT INTO travel_entertainment (travel_id, entertainment_id) \
-                        VALUES (:travel_id, :entertainment_id)"), 
-                        {"travel_id": t[0], "entertainment_id": t[1]}
+async def create_tables(session: AsyncSession) -> None:
+    tables = [
+        """
+        CREATE TABLE city (
+            city_id SERIAL PRIMARY KEY,
+            name VARCHAR NOT NULL UNIQUE
+        )
+        """,
+        """
+        CREATE TABLE entertainment (
+            id SERIAL PRIMARY KEY,
+            duration VARCHAR NOT NULL,
+            address VARCHAR NOT NULL,
+            event_name VARCHAR NOT NULL UNIQUE,
+            event_time TIMESTAMP NOT NULL,
+            city INTEGER REFERENCES city(city_id) ON DELETE CASCADE
+        )
+        """,
+        """
+        CREATE TABLE accommodations (
+            id SERIAL PRIMARY KEY,
+            price INTEGER NOT NULL,
+            address VARCHAR NOT NULL,
+            name VARCHAR NOT NULL UNIQUE,
+            type VARCHAR NOT NULL,
+            rating INTEGER NOT NULL,
+            check_in TIMESTAMP NOT NULL,
+            check_out TIMESTAMP NOT NULL, 
+            city INTEGER NOT NULL REFERENCES city(city_id) ON DELETE CASCADE
+        )
+        """,
+        """
+        CREATE TABLE directory_route (
+            id SERIAL PRIMARY KEY,
+            type_transport VARCHAR NOT NULL,
+            departure_city INT REFERENCES city(city_id) ON DELETE CASCADE,
+            arrival_city INT REFERENCES city(city_id) ON DELETE CASCADE,
+            distance INT NOT NULL,
+            price INT NOT NULL
+        )
+        """,
+        """
+        CREATE TABLE users (
+            id SERIAL PRIMARY KEY,
+            full_name VARCHAR NOT NULL,
+            passport VARCHAR NOT NULL UNIQUE,
+            phone VARCHAR NOT NULL UNIQUE,
+            email VARCHAR NOT NULL UNIQUE,
+            login VARCHAR NOT NULL UNIQUE,
+            password VARCHAR NOT NULL,
+            is_admin BOOLEAN NOT NULL DEFAULT FALSE
+        )
+        """,
+        """
+        CREATE TABLE travel (
+            id SERIAL PRIMARY KEY,
+            status VARCHAR NOT NULL,
+            user_id INT NOT NULL
+        )
+        """,
+        """
+        CREATE TABLE travel_entertainment (
+            id SERIAL PRIMARY KEY,
+            travel_id INT NOT NULL,
+            entertainment_id INT NOT NULL,
+            CONSTRAINT fk_travel_id FOREIGN KEY (travel_id) REFERENCES travel(id) ON DELETE CASCADE,
+            CONSTRAINT fk_entertainment_id FOREIGN KEY (entertainment_id) REFERENCES entertainment(id) ON DELETE CASCADE
+        )
+        """,
+        """
+        CREATE TABLE travel_accommodations (
+            id SERIAL PRIMARY KEY,
+            travel_id INT NOT NULL,
+            accommodation_id INT NOT NULL,
+            CONSTRAINT fk_travel_id FOREIGN KEY (travel_id) REFERENCES travel(id) ON DELETE CASCADE,
+            CONSTRAINT fk_accommodation_id FOREIGN KEY (accommodation_id) REFERENCES accommodations(id) ON DELETE CASCADE
+        )
+        """,
+        """
+        CREATE TABLE users_travel (
+            id SERIAL PRIMARY KEY,
+            travel_id INT NOT NULL,
+            users_id INT NOT NULL,
+            CONSTRAINT fk_travel_id FOREIGN KEY (travel_id) REFERENCES travel(id) ON DELETE CASCADE,
+            CONSTRAINT fk_users_id FOREIGN KEY (users_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+        """,
+        """
+        CREATE TABLE route (
+            id SERIAL PRIMARY KEY,
+            d_route_id INT NOT NULL,
+            travel_id INT NOT NULL,
+            start_time TIMESTAMP NOT NULL,
+            end_time TIMESTAMP NOT NULL,
+            type VARCHAR(20) NOT NULL,
+            CONSTRAINT fk_d_route_id FOREIGN KEY (d_route_id) REFERENCES directory_route(id) ON DELETE CASCADE,
+            CONSTRAINT fk_travel_id FOREIGN KEY (travel_id) REFERENCES travel(id) ON DELETE CASCADE
+        )
+        """
+    ]
+    
+    for table_sql in tables:
+        await session.execute(text(table_sql))
+
+
+async def fill_test_data(session: AsyncSession) -> None:
+    await session.execute(text("""
+        INSERT INTO city (name) VALUES 
+        ('Москва'), ('Воронеж'), ('Санкт-Петербург'), 
+        ('Екатеринбург'), ('Калининград')
+        """))
+    entertainment_data = [
+        {"duration": "4 часа", "address": "Главная площадь", "event_name": "Концерт", 
+                                            "event_time": datetime(2025, 4, 10, 16, 0, 0), "city": 1},
+        {"duration": "3 часа", "address": "ул. Кузнецова, 4", "event_name": "Выставка", 
+                                            "event_time": datetime(2025, 4, 5, 10, 0, 0), "city": 1}
+    ]
+    for data in entertainment_data:
+        await session.execute(text("""
+            INSERT INTO entertainment 
+            (duration, address, event_name, event_time, city) 
+            VALUES (:duration, :address, :event_name, :event_time, :city)"""), data)
+    await session.commit()
+    accommodations_data = [
+        {"price": 33450, "address": "ул. Дмитриевского, 7", "name": "ABC",
+            "type": "Квартира", "rating": 3, "check_in": datetime(2025, 4, 2, 14, 0, 0), "check_out": datetime(2025, 4, 6, 18, 0, 0), "city": 1},
+        {
+            "price": 46840, "address": "Улица Гоголя, 12", "name": "Four Seasons",
+            "type": "Отель", "rating": 5, "check_in": datetime(2025, 3, 29, 12, 30, 0), "check_out": datetime(2025, 4, 5, 18, 0, 0), "city": 1  
+        }
+    ]
+
+    for data in accommodations_data:
+        await session.execute(text("""
+            INSERT INTO accommodations 
+            (price, address, name, type, rating, check_in, check_out, city) 
+            VALUES (:price, :address, :name, :type, :rating, :check_in, :check_out, :city)
+        """), data)
+
+    d_routes = [
+        {"type_transport": "Паром", "departure_city": 3, "arrival_city": 5, "distance": 966, "price": 3987},
+        {"type_transport": "Самолет", "departure_city": 3, "arrival_city": 5, "distance": 966, "price": 5123},
+        {"type_transport": "Автобус", "departure_city": 3, "arrival_city": 4, "distance": 1840, "price": 3796},
+        {"type_transport": "Поезд", "departure_city": 3, "arrival_city": 5, "distance": 966, "price": 2541},
+        {"type_transport": "Автобус", "departure_city": 3, "arrival_city": 5, "distance": 966, "price": 4756},
+        {"type_transport": "Самолет", "departure_city": 3, "arrival_city": 4, "distance": 1840, "price": 8322},
+        {"type_transport": "Поезд", "departure_city": 3, "arrival_city": 4, "distance": 1840, "price": 4305},
+        {"type_transport": "Самолет", "departure_city": 5, "arrival_city": 4, "distance": 3025, "price": 10650},
+        {"type_transport": "Поезд", "departure_city": 5, "arrival_city": 4, "distance": 3025, "price": 5988},
+        {"type_transport": "Самолет", "departure_city": 1, "arrival_city": 2, "distance": 467, "price": 2223},
+        {"type_transport": "Поезд", "departure_city": 1, "arrival_city": 2, "distance": 515, "price": 1911},
+        {"type_transport": "Поезд", "departure_city": 4, "arrival_city": 1, "distance": 1780, "price": 3500},
+    ]
+    for data in d_routes:
+        await session.execute(text("INSERT INTO directory_route (type_transport, departure_city, \
+                arrival_city, distance, price) \
+            VALUES (:type_transport, :departure_city, :arrival_city, :distance, :price)"), data)
+    users = [
+        {"fio": "Лобач Анастасия Олеговна", "number_passport": "1111111111", "phone_number": "89261111111", "email": "nastya@lobach.info", "login": "user1", "password": "123!e5T78"},
+        {"fio": "Иванов Иван Иванович", "number_passport": "2222222222", "phone_number": "89262222222", "email": "ivanov@ivanov.com", "login": "user2", "password": "456!f6R89"},
+        {"fio": "Петров Петр Петрович", "number_passport": "3333333333", "phone_number": "89263333333", "email": "petrov@petrov.com", "login": "user3", "password": "789!g7T90"}
+    ]
+    for user_data in users:
+        await session.execute(text("""
+            INSERT INTO users (full_name, passport, phone, email, login, password, is_admin)
+            VALUES (:fio, :number_passport, :phone_number, :email, :login, :password, false)
+        """), user_data)
+
+    travels_data = [{"status": "В процессе", "user_id": 1}, {"status": "Завершен", "user_id": 1}]
+    tr_ent = [(1, 2), (2, 1)]
+    tr_a = [(1, 1), (2, 2)]
+
+    for i, travel_data in enumerate(travels_data, 1):
+        await session.execute(text("""
+            INSERT INTO travel (id, status, user_id) VALUES (:id, :status, :user_id)
+        """), {"id": i, "status": travel_data["status"], "user_id": travel_data["user_id"]})
+    for t in tr_ent:
+        await session.execute(
+            text("INSERT INTO travel_entertainment (travel_id, entertainment_id) \
+                VALUES (:travel_id, :entertainment_id)"), 
+                {"travel_id": t[0], "entertainment_id": t[1]}
+        )
+    for t in tr_a:
+        await session.execute(
+            text("INSERT INTO travel_accommodations (travel_id, accommodation_id) \
+                VALUES (:travel_id, :accommodation_id)"),
+                    {"travel_id": t[0], "accommodation_id": t[1]}
+        )
+    route = [
+        {"d_route_id": 1, "travel_id": 1, "start_time": datetime(2025, 4, 2, 7, 30, 0),
+                                "end_time": datetime(2025, 4, 6, 7, 0, 0), "type": "Свои"}, 
+        {"d_route_id": 9, "travel_id": 1, "start_time": datetime(2025, 4, 3, 7, 30, 0),
+                                "end_time": datetime(2025, 4, 6, 7, 0, 0), "type": "Свои"},
+        {"d_route_id": 11, "travel_id": 2, "start_time": datetime(2025, 3, 29, 6, 50, 0), 
+                                "end_time": datetime(2025, 4, 5, 22, 45, 0), "type": "Свои"}]
+    for data in route:
+        await session.execute(
+            text("INSERT INTO route (d_route_id, travel_id, start_time, end_time, type) \
+                VALUES (:d_route_id, :travel_id, :start_time, :end_time, :type)"),
+                    {
+                        "d_route_id": data["d_route_id"],
+                        "travel_id": data["travel_id"],
+                        "start_time": data["start_time"],
+                        "end_time": data["end_time"],
+                        "type": data["type"],
+                    }
                 )
-            for t in tr_a:
-                await session.execute(
-                    text("INSERT INTO travel_accommodations (travel_id, accommodation_id) \
-                        VALUES (:travel_id, :accommodation_id)"),
-                            {"travel_id": t[0], "accommodation_id": t[1]}
-                )
-            route = [
-                {"d_route_id": 1, "travel_id": 1, "start_time": datetime(2025, 4, 2, 7, 30, 0),
-                                     "end_time": datetime(2025, 4, 6, 7, 0, 0), "type": "Свои"}, 
-                {"d_route_id": 9, "travel_id": 1, "start_time": datetime(2025, 4, 3, 7, 30, 0),
-                                     "end_time": datetime(2025, 4, 6, 7, 0, 0), "type": "Свои"},
-                {"d_route_id": 11, "travel_id": 2, "start_time": datetime(2025, 3, 29, 6, 50, 0), 
-                                        "end_time": datetime(2025, 4, 5, 22, 45, 0), "type": "Свои"}]
-            for data in route:
-                await session.execute(
-                    text("INSERT INTO route (d_route_id, travel_id, start_time, end_time, type) \
-                        VALUES (:d_route_id, :travel_id, :start_time, :end_time, :type)"),
-                            {
-                                "d_route_id": data["d_route_id"],
-                                "travel_id": data["travel_id"],
-                                "start_time": data["start_time"],
-                                "end_time": data["end_time"],
-                                "type": data["type"],
-                            }
-                        )
-            await session.execute(
-                text("INSERT INTO users_travel (travel_id, users_id) VALUES (:travel_id, :users_id)"),
-                {"travel_id": 1, "users_id": 1})
-            await session.execute(
-                text("INSERT INTO users_travel (travel_id, users_id) VALUES (:travel_id, :users_id)"),
-                {"travel_id": 2, "users_id": 1})
-            await session.commit()
-            
-            await session.begin()
-            yield session
-            
-        finally:
-            await session.rollback()
+    await session.execute(
+        text("INSERT INTO users_travel (travel_id, users_id) VALUES (:travel_id, :users_id)"),
+        {"travel_id": 1, "users_id": 1})
+    await session.execute(
+        text("INSERT INTO users_travel (travel_id, users_id) VALUES (:travel_id, :users_id)"),
+        {"travel_id": 2, "users_id": 1})
+    await session.commit()
 
 
 @pytest_asyncio.fixture
@@ -412,56 +415,3 @@ async def travel_service(db_session: AsyncSession) -> TravelService:
     accommodation_repo = AccommodationRepository(db_session, city_repo)
     travel_repo = TravelRepository(db_session, user_repo, entertainment_repo, accommodation_repo)
     return TravelService(travel_repo)
-
-
-@pytest.fixture(scope="session")
-async def browser():
-    """Launch browser for E2E tests"""
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(
-            headless=True,
-            args=[
-                "--no-sandbox",
-                "--disable-dev-shm-usage",
-                "--disable-gpu",
-                "--disable-web-security"
-            ]
-        )
-        yield browser
-        await browser.close()
-
-@pytest.fixture
-async def page(browser) -> Page:
-    """Create a new page for each test"""
-    context = await browser.new_context(
-        viewport={"width": 1920, "height": 1080},
-        ignore_https_errors=True
-    )
-    page = await context.new_page()
-    
-    # Устанавливаем базовый URL
-    page.set_default_timeout(15000)
-    page.set_default_navigation_timeout(30000)
-    
-    yield page
-    
-    await context.close()
-
-@pytest.fixture
-async def authenticated_page(page: Page):
-    """Create an authenticated page for tests requiring login"""
-    # Логинимся
-    await page.goto("http://app:8000/login")
-    await page.fill('input[name="login"]', "user1")
-    await page.fill('input[name="password"]', "123!e5T78")
-    await page.click('button[type="submit"]')
-    
-    await page.wait_for_url("http://app:8000/**", timeout=10000)
-    
-    yield page
-    
-    try:
-        await page.click('text=Выйти')
-        await page.wait_for_url("http://app:8000/", timeout=5000)
-    except:
-        pass 

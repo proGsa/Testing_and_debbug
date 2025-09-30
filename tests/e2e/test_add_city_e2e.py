@@ -1,26 +1,30 @@
-# tests/e2e/test_auth_e2e_simple.py
-import pytest
+from __future__ import annotations
+
+import os
+
 import allure
 import httpx
-import os
+import pytest
+
 from faker import Faker
 
+
 fake = Faker('ru_RU')
+TMP = 200
 
 
-@allure.feature("E2E City Management")
+@allure.feature("E2E City Management") 
 @allure.story("Login and add city flow")
 class TestCityManagementE2E:
     @pytest.mark.asyncio
-    async def test_login_and_add_city_api(self):
-        base_url = os.getenv("BASE_URL", "http://localhost:8000")
-        async with httpx.AsyncClient(base_url=base_url) as client:
+    async def test_login_and_add_city_api(self) -> None:
+        async with httpx.AsyncClient(base_url="http://localhost:8000") as client:
             with allure.step("Prepare login data"):
                 login_data = {"login": "admin1", "password": "123!e5T78"}
 
             with allure.step("Send login request"):
                 resp = await client.post("/api/login", json=login_data)
-                assert resp.status_code == 200
+                assert resp.status_code == TMP
                 token = resp.json().get("access_token")
                 assert token
 
@@ -40,5 +44,5 @@ class TestCityManagementE2E:
                 print(f"HTML page status: {list_resp.status_code}")
                 print(f"HTML content length: {len(list_resp.text)}")
                 
-                assert list_resp.status_code == 200
+                assert list_resp.status_code == TMP
                 assert "Сочи" in list_resp.text
