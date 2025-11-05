@@ -9,7 +9,6 @@ from services.directory_route_service import DirectoryRouteService
 
 FOUR = 13
 
-
 @pytest.mark.asyncio
 async def test_add_directory_route_success(d_route_service: DirectoryRouteService) -> None:
     new_route = DirectoryRoute(

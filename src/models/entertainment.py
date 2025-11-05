@@ -5,7 +5,8 @@ import re
 from datetime import datetime
 
 from pydantic import BaseModel
-from pydantic import Field, ConfigDict
+from pydantic import ConfigDict
+from pydantic import Field
 from pydantic import field_validator
 
 from models.city import City

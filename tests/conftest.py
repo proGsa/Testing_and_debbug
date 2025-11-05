@@ -33,7 +33,16 @@ from services.route_service import RouteService
 from services.travel_service import TravelService
 from services.user_service import AuthService
 from services.user_service import UserService
+import warnings
+from sqlalchemy.exc import SAWarning
+import logging
 
+# Игнорируем все SAWarning
+warnings.filterwarnings("ignore", category=SAWarning)
+warnings.filterwarnings("ignore", message="Event loop is closed")
+warnings.filterwarnings("ignore", message="The garbage collector is trying to clean up non-checked-in connection")
+
+logging.getLogger("sqlalchemy.pool").setLevel(logging.CRITICAL)
 
 @pytest.fixture
 def mock_city_repo() -> Mock:
@@ -88,8 +97,8 @@ async def event_loop() -> AsyncGenerator[asyncio.AbstractEventLoop]:
     loop.close()
 
 
-engine = create_async_engine("postgresql+asyncpg://test_user:test_password@localhost:5432/test_db", echo=True)
 # engine = create_async_engine("postgresql+asyncpg://nastya:nastya@localhost:5434/mydb", echo=True)
+engine = create_async_engine("postgresql+asyncpg://test_user:test_password@test-db:5432/test_db", echo=True)
 
 AsyncSessionMaker: async_sessionmaker[AsyncSession] = async_sessionmaker(bind=engine, expire_on_commit=False)
 
@@ -415,3 +424,8 @@ async def travel_service(db_session: AsyncSession) -> TravelService:
     accommodation_repo = AccommodationRepository(db_session, city_repo)
     travel_repo = TravelRepository(db_session, user_repo, entertainment_repo, accommodation_repo)
     return TravelService(travel_repo)
+
+# @pytest_asyncio.fixture
+# async def dispose_engine():
+#     yield
+#     await engine.dispose()

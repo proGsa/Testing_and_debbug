@@ -5,7 +5,8 @@ import re
 from typing import ClassVar
 
 from pydantic import BaseModel
-from pydantic import EmailStr, ConfigDict
+from pydantic import ConfigDict
+from pydantic import EmailStr
 from pydantic import field_validator
 
 

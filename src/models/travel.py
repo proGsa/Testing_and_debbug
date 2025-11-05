@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from pydantic import BaseModel
-from pydantic import Field, ConfigDict
+from pydantic import ConfigDict
+from pydantic import Field
 from pydantic import field_validator
 
 from models.accommodation import Accommodation

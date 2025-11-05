@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import logging
 
+# from contextlib import AsyncGenerator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi import Request
 from fastapi.responses import HTMLResponse
 from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
 
-from init_monodb.create_mongodb import async_init_mongodb
 from logger import setup_logging
 from routers.accommodation import accommodation_router
 from routers.city import city_router
@@ -24,7 +26,15 @@ templates = Jinja2Templates(directory="templates")
 setup_logging()
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Запуск приложения")
+    yield
+    logger.info("Завершение работы приложения")
+
+
+app = FastAPI(lifespan=lifespan)
 routers = [
     router,
     d_router,
@@ -61,17 +71,6 @@ async def handle_exceptions(request: Request, exc: Exception) -> JSONResponse:
         status_code=500,
         content={"detail": "Internal server error"},
     )
-
-
-@app.on_event("startup")
-async def startup() -> None:
-    logger.info("Запуск приложения")
-    # await async_init_mongodb()
-
-
-@app.on_event("shutdown")
-async def shutdown() -> None:
-    logger.info("Завершение работы приложения")
 
 
 @app.get("/health")

@@ -1,13 +1,18 @@
 from __future__ import annotations
 
 import logging
+import random
+import string
+import time
 
 from datetime import datetime
 from datetime import timedelta
 from typing import Any
+from typing import ClassVar
 
 import bcrypt
 
+from fastapi import HTTPException
 from jose import jwt
 
 from abstract_repository.iuser_repository import IUserRepository
@@ -29,6 +34,7 @@ class UserService(IUserService):
     def __init__(self, repository: IUserRepository) -> None:
         self.repository = repository
         logger.debug("UserService инициализирован")
+        reset_tokens: ClassVar[dict[str, str]] = {}
 
     async def add(self, user: User) -> User:
         try:
@@ -64,11 +70,49 @@ class UserService(IUserService):
             logger.error("Пользователь с ID %d не найден.", user_id)
             raise ValueError("Пользователь не найден.")
 
+    async def get_user_by_reset_token(self, token: str) -> User | None:
+        login = self.reset_tokens.get(token)
+        if not login:
+            return None
+        return await self.repository.get_by_login(login)
+
+    async def update_password(self, login: str, new_password: str) -> None:
+        user = await self.repository.get_by_login(login)
+        if not user:
+            raise ValueError("User not found")
+        user.password = new_password  # или используйте хеширование
+        await self.repository.update(user)
 
 class AuthService(IAuthService):
+    failed_attempts: ClassVar[dict[str, list[float]]] = {}
+    blocked_users: ClassVar[dict[str, float]] = {}
+    two_fa_storage: ClassVar[dict[str, float]] = {}
+    MAX_2FA_ATTEMPTS: ClassVar[int] = 5
+    BLOCK_2FA_TIME: ClassVar[int] = 60
+
     def __init__(self, repository: IUserRepository) -> None:
         self.repository = repository
         logger.debug("AuthService инициализирован")
+
+    async def generate_2fa_code(self, login: str) -> str:
+        code = "".join(random.choices(string.digits, k=6))
+        self.two_fa_storage[login] = {
+            "code": code,
+            "expires": time.time() + 300  # 5 минут
+        }
+        return code
+
+    async def verify_2fa_code(self, login: str, code: str) -> bool:
+        data = self.two_fa_storage.get(login)
+        if not data:
+            return False
+        if data["expires"] < time.time():
+            del self.two_fa_storage[login]
+            return False
+        if data["code"] != code:
+            return False
+        del self.two_fa_storage[login]
+        return True
 
     async def registrate(self, user: User) -> User:
         user.password = self.get_password_hash(user.password)
@@ -83,16 +127,45 @@ class AuthService(IAuthService):
         return user
 
     async def authenticate(self, login: str, password: str) -> User | None:
+        if login in self.blocked_users:
+            unblock_time = self.blocked_users[login]
+            if time.time() < unblock_time:
+                raise HTTPException(status_code=403, detail="User temporarily blocked")
+            del self.blocked_users[login]
+            self.failed_attempts[login] = []
+
         user = await self.repository.get_by_login(login)
         if not user:
             logger.info("Пользователь %s не найден", login)
             return None
+
         if not self.verify_password(password, user.password):
             logger.info("Неверный пароль для пользователя %s", login)
+            self._register_failed_attempt(login)
             return None
-            
+
+        # успешный вход — сбрасываем неудачные попытки
+        self.failed_attempts[login] = []
         return user
-    
+
+    def _register_failed_attempt(self, login: str) -> None:
+        now = time.time()
+        attempts = self.failed_attempts.get(login, [])
+        attempts.append(now)
+        self.failed_attempts[login] = attempts
+
+        if len(attempts) >= self.MAX_2FA_ATTEMPTS:  # например, 3 неверных попытки
+            self.blocked_users[login] = now + 60  # блокируем на 60 секунд
+            logger.warning(f"Пользователь {login} заблокирован на 60 секунд")
+
+    async def unblock_user(self, login: str) -> None:
+        if login in self.blocked_users:
+            del self.blocked_users[login]
+            logger.info(f"Пользователь {login} разблокирован вручную")
+
+        if login in self.failed_attempts:
+            self.failed_attempts[login] = []
+
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str | bytes) -> bool:
         try:
@@ -118,9 +191,10 @@ class AuthService(IAuthService):
     
     @staticmethod
     def get_password_hash(password: str) -> str:
-        return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        salt = bcrypt.gensalt()
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
+        return hashed_password.decode('utf-8')
     
     @staticmethod
     def decode_token(token: str) -> dict[str, Any]:
-        """Декодирование JWT токена"""
         return jwt.decode(token, secret_key, algorithms=[algorithm])

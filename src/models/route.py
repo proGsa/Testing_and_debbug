@@ -3,7 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 
 from pydantic import BaseModel
-from pydantic import Field, ConfigDict
+from pydantic import ConfigDict
+from pydantic import Field
 from pydantic import ValidationInfo
 from pydantic import field_validator
 

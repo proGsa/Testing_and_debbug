@@ -146,9 +146,8 @@ class UserRepository(IUserRepository):
         except SQLAlchemyError as e:
             logger.error(f"Ошибка при обновлении пользователя с ID {update_user.user_id}: {e}", exc_info=True)
 
-
     async def delete(self, user_id: int) -> None:
-        delete_travels = text("DELETE FROM travel WHERE user_id = :user_id")
+        delete_travels = text("DELETE FROM users_travel WHERE users_id = :user_id")
         delete_user = text("DELETE FROM users WHERE id = :user_id")
         
         try:

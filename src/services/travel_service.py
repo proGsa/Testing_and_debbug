@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import logging
 
+from typing import Any
+
 from abstract_repository.itravel_repository import ITravelRepository
 from abstract_service.travel_service import ITravelService
 from models.accommodation import Accommodation
 from models.entertainment import Entertainment
 from models.travel import Travel
 from models.user import User
-from typing import Any
+
 
 logger = logging.getLogger(__name__)
 

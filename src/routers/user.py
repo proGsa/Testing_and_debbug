@@ -1,16 +1,22 @@
 from __future__ import annotations
 
 import logging
+import time
 
+from email.message import EmailMessage
 from typing import Any
+
+import aiosmtplib
 
 from fastapi import APIRouter
 from fastapi import Depends
+from fastapi import HTTPException
 from fastapi import Request
 from fastapi.responses import HTMLResponse
 from fastapi.responses import JSONResponse
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
 
 from service_locator import ServiceLocator
 from service_locator import get_service_locator
@@ -23,6 +29,20 @@ user_router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 get_sl_dep = Depends(get_service_locator)
+
+
+async def send_email(to_email: str, subject: str, body: str) -> None:
+    message = EmailMessage()
+    message["From"] = "noreply@example.com"
+    message["To"] = to_email
+    message["Subject"] = subject
+    message.set_content(body)
+
+    await aiosmtplib.send(
+        message,
+        hostname="mailhog",
+        port=1025
+    )
 
 
 @user_router.post("/api/register")
@@ -61,6 +81,28 @@ async def login_user(request: Request, service_locator: ServiceLocator = get_sl_
     result = await service_locator.get_user_contr().login(request)
     logger.info("Результат входа: %s", result)
     return result
+
+
+@user_router.post("/api/login1")
+async def login1_user(request: Request, service_locator: ServiceLocator = get_sl_dep) -> dict[str, Any]:
+    data = await request.json()
+    login = data.get("login")
+    password = data.get("password")
+
+    user = await service_locator.get_auth_serv().authenticate(login, password)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid login or password")
+
+    code = await service_locator.get_auth_serv().generate_2fa_code(login)
+
+    await send_email(user.email, "Ваш 2FA код", f"Ваш код: {code}")
+
+    two_fa_token = f"2fa-{login}-{int(time.time())}"
+    return {
+        "message": "2FA code sent to email",
+        "two_fa_token": two_fa_token,
+        "login": login
+    }
 
 
 @user_router.get("/profile_user/{user_id}", response_class=HTMLResponse)
@@ -153,3 +195,93 @@ async def delete_user(user_id: int, service_locator: ServiceLocator = get_sl_dep
     result = await service_locator.get_user_contr().delete_user(user_id)
     logger.info("Пользователь ID %d успешно удален: %s", user_id, result)
     return RedirectResponse(url="/user.html", status_code=303)
+
+
+@user_router.post("/api/users/json")
+async def register_user_json(request: Request, service_locator: ServiceLocator = get_sl_dep) -> JSONResponse:
+    result = await service_locator.get_user_contr().registrate(request)
+    return JSONResponse({
+        "user_id": result.get("user_id"),
+        "message": result.get("message")
+    })
+
+
+class RecoverPasswordRequest(BaseModel):
+    login: str
+
+
+@user_router.post("/api/recover-password")
+async def recover_password(data: RecoverPasswordRequest, service_locator: ServiceLocator = get_sl_dep) -> dict[str, Any]:
+
+    user = await service_locator.get_user_repo().get_by_login(data.login)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    await service_locator.get_auth_serv().unblock_user(user.login)
+
+    return {"message": "Password recovery initiated"}
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    password: str
+
+
+@user_router.post("/api/reset-password")
+async def reset_password(data: ResetPasswordRequest, service_locator: ServiceLocator = get_sl_dep) -> dict[str, Any]:
+    user = await service_locator.get_user_serv().get_user_by_reset_token(data.token)
+    if not user:
+        raise HTTPException(status_code=404, detail="Token invalid or expired")
+
+    await service_locator.get_user_serv().update_password(user.login, data.password)
+    return {"message": "Password has been reset successfully"}
+
+
+class Verify2FARequest(BaseModel):
+    login: str
+    code: str
+    two_fa_token: str
+
+
+@user_router.post("/api/verify-2fa")
+async def verify_2fa(data: Verify2FARequest, service_locator: ServiceLocator = get_sl_dep) -> dict[str, Any]:
+    valid = await service_locator.get_auth_serv().verify_2fa_code(data.login, data.code)
+    if not valid:
+        raise HTTPException(status_code=401, detail="Invalid 2FA code")
+
+    # Возвращаем реальный access_token после подтверждения 2FA
+    user = await service_locator.get_user_repo().get_by_login(data.login)
+    access_token = service_locator.get_auth_serv().create_access_token(user)
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user_id": user.user_id,
+        "user_login": user.login,
+        "is_admin": user.is_admin
+    }
+
+
+class TwoFARequest(BaseModel):
+    login: str
+    # two_fa_token: str 
+    code: str
+
+
+@user_router.post("/api/login2")
+async def login_2fa(data: TwoFARequest, service_locator: ServiceLocator = get_sl_dep) -> dict[str, Any]:
+    is_valid = await service_locator.get_auth_serv().verify_2fa_code(data.login, data.code)
+    if not is_valid:
+        raise HTTPException(status_code=401, detail="Invalid 2FA code")
+    
+    user = await service_locator.get_user_repo().get_by_login(data.login)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    token = service_locator.get_auth_serv().create_access_token(user)
+    return {"access_token": token, "token_type": "bearer"}
+
+
+@user_router.delete("/api/delete/{user_id}")
+async def api_delete_user(user_id: int, service_locator: ServiceLocator = get_sl_dep) -> dict[str, Any]:
+    result = await service_locator.get_user_contr().delete_user(user_id)
+    return {"message": "User deleted", "result": result}

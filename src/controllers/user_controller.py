@@ -71,7 +71,7 @@ class UserController:
         try:
             data = await request.json()
             data["user_id"] = 1
-            data['password'] = self.auth_service.get_password_hash(data['password'])
+            # data['password'] = self.auth_service.get_password_hash(data['password'])
             user = User(**data)
             registered_user = await self.auth_service.registrate(user)
             token = self.auth_service.create_access_token(registered_user)
@@ -117,6 +117,8 @@ class UserController:
                 "is_admin": user.is_admin,
                 "message": "Login successfully"
             }
+        except HTTPException as e:
+            raise e
         except Exception as e:
             logger.error("Ошибка при авторизации пользователя: %s", str(e), exc_info=True)
             raise HTTPException(status_code=401, detail="Invalid login or password")

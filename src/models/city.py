@@ -3,8 +3,9 @@ from __future__ import annotations
 from typing import ClassVar
 
 from pydantic import BaseModel
-from pydantic import field_validator
 from pydantic import ConfigDict
+from pydantic import field_validator
+
 
 class City(BaseModel):
     MAX_NAME_LENGTH: ClassVar[int] = 50
