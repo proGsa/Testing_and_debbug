@@ -186,7 +186,16 @@ jobs:
           --health-interval=5s
           --health-timeout=5s
           --health-retries=5
-
+      mailhog:                           
+        image: mailhog/mailhog
+        ports:
+          - 1025:1025                     # SMTP порт
+          - 8025:8025                     # Веб-интерфейс
+        options: >-
+          --health-cmd="nc -z localhost 1025"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=5
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
