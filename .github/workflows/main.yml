@@ -235,6 +235,8 @@ jobs:
         env:
           DATABASE_URL: postgresql+asyncpg://nastya:nastya@localhost:5432/mydb
           BASE_URL: http://localhost:8000
+          MAIL_HOST: localhost
+          MAIL_PORT: 1025
           TEST_ENV: e2e
 
       - name: Ensure Allure e2e results exist
