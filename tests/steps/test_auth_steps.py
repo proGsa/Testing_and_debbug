@@ -7,10 +7,12 @@ from httpx._transports.asgi import ASGITransport
 from main import app
 from models.user import User
 from faker import Faker
+import os
 
 fake = Faker('ru_RU')
 
 scenarios("../features/authentication.feature")
+BDD_PASS = os.environ.get("BDD_USER_PASS")
 
 # ------------------------------
 # Асинхронная фикстура для тестового пользователя

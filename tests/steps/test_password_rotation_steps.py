@@ -6,10 +6,12 @@ from main import app
 from models.user import User
 from faker import Faker
 from unittest.mock import AsyncMock
+import os
+
 fake = Faker('ru_RU')
 
 scenarios("../features/password_rotation.feature")
-
+BDD_PASS = os.environ.get("BDD_USER_PASS")
 # ------------------------------
 # Асинхронная фикстура для пользователя со старым паролем
 # ------------------------------
