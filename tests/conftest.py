@@ -98,7 +98,7 @@ async def event_loop() -> AsyncGenerator[asyncio.AbstractEventLoop]:
 
 
 # engine = create_async_engine("postgresql+asyncpg://nastya:nastya@localhost:5434/mydb", echo=True)
-engine = create_async_engine("postgresql+asyncpg://test_user:test_password@test-db:5432/test_db", echo=True)
+engine = create_async_engine("postgresql+asyncpg://test_user:test_password@localhost:5432/test_db", echo=True)
 
 AsyncSessionMaker: async_sessionmaker[AsyncSession] = async_sessionmaker(bind=engine, expire_on_commit=False)
 
@@ -424,8 +424,3 @@ async def travel_service(db_session: AsyncSession) -> TravelService:
     accommodation_repo = AccommodationRepository(db_session, city_repo)
     travel_repo = TravelRepository(db_session, user_repo, entertainment_repo, accommodation_repo)
     return TravelService(travel_repo)
-
-# @pytest_asyncio.fixture
-# async def dispose_engine():
-#     yield
-#     await engine.dispose()
