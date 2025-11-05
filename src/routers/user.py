@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import time
+import os
 
 from email.message import EmailMessage
 from typing import Any
@@ -30,6 +31,8 @@ templates = Jinja2Templates(directory="templates")
 
 get_sl_dep = Depends(get_service_locator)
 
+MAIL_HOST = os.getenv("MAIL_HOST", "mailhog")
+MAIL_PORT = int(os.getenv("MAIL_PORT", "1025"))
 
 async def send_email(to_email: str, subject: str, body: str) -> None:
     message = EmailMessage()
@@ -40,8 +43,8 @@ async def send_email(to_email: str, subject: str, body: str) -> None:
 
     await aiosmtplib.send(
         message,
-        hostname="mailhog",
-        port=1025
+        hostname=MAIL_HOST,
+        port=MAIL_PORT
     )
 
 
