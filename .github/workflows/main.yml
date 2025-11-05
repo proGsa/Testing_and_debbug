@@ -227,9 +227,9 @@ jobs:
           nohup poetry run uvicorn src.main:app --host 0.0.0.0 --port 8000 &
           sleep 5
 
-      - name: Run e2e tests
+      - name: Run e2e tests & BDD tests
         run: |
-          poetry run pytest tests/e2e/ -v \
+          poetry run pytest tests/e2e/ tests/steps/ -v \
             --alluredir=allure-results/e2e \
             --junitxml=test-reports/e2e-tests.xml
         env:
@@ -238,6 +238,7 @@ jobs:
           MAIL_HOST: localhost
           MAIL_PORT: 1025
           TEST_ENV: e2e
+          BDD_USER_PASS: ${{ secrets.BDD_USER_PASS }}
 
       - name: Ensure Allure e2e results exist
         run: |
