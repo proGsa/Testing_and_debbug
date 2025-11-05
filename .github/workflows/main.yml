@@ -208,7 +208,7 @@ jobs:
       - name: Install dependencies
         run: |
           poetry install --with dev
-          poetry run pip install allure-pytest
+          poetry run pip install allure-pytest pytest-bdd
 
       - name: Create directories for test results
         run: |
