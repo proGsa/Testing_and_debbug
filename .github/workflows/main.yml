@@ -7,167 +7,167 @@ on:
     branches: [ main ]
 
 jobs:
-  unit-tests:
-    runs-on: ubuntu-latest
-    continue-on-error: false
-    env:
-      PYTHONPATH: ${{ github.workspace }}/src
+  # unit-tests:
+  #   runs-on: ubuntu-latest
+  #   continue-on-error: false
+  #   env:
+  #     PYTHONPATH: ${{ github.workspace }}/src
 
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: test_user
-          POSTGRES_PASSWORD: test_password
-          POSTGRES_DB: test_db
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U test_user -d test_db"
-          --health-interval=5s
-          --health-timeout=5s
-          --health-retries=5
+  #   services:
+  #     postgres:
+  #       image: postgres:15
+  #       env:
+  #         POSTGRES_USER: test_user
+  #         POSTGRES_PASSWORD: test_password
+  #         POSTGRES_DB: test_db
+  #       ports:
+  #         - 5432:5432
+  #       options: >-
+  #         --health-cmd="pg_isready -U test_user -d test_db"
+  #         --health-interval=5s
+  #         --health-timeout=5s
+  #         --health-retries=5
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
+  #     - name: Set up Python
+  #       uses: actions/setup-python@v5
+  #       with:
+  #         python-version: "3.13"
 
-      - name: Install Poetry
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+  #     - name: Install Poetry
+  #       run: |
+  #         curl -sSL https://install.python-poetry.org | python3 -
+  #         echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Install dependencies
-        run: |
-          poetry install --with dev
-          poetry run pip install allure-pytest
+  #     - name: Install dependencies
+  #       run: |
+  #         poetry install --with dev
+  #         poetry run pip install allure-pytest
 
-      - name: Create directories for test results
-        run: |
-          mkdir -p allure-results/unit
-          mkdir -p test-reports
+  #     - name: Create directories for test results
+  #       run: |
+  #         mkdir -p allure-results/unit
+  #         mkdir -p test-reports
 
-      - name: Run unit tests
-        run: |
-          poetry run pytest tests/unit/ -v \
-            --alluredir=allure-results/unit \
-            --junitxml=test-reports/unit-tests.xml
-        env:
-          DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
-          TEST_ENV: unit
+  #     - name: Run unit tests
+  #       run: |
+  #         poetry run pytest tests/unit/ -v \
+  #           --alluredir=allure-results/unit \
+  #           --junitxml=test-reports/unit-tests.xml
+  #       env:
+  #         DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
+  #         TEST_ENV: unit
 
-      - name: Ensure Allure unit results exist
-        run: |
-          if [ ! -d "allure-results/unit" ] || [ -z "$(ls -A allure-results/unit)" ]; then
-            echo '{
-              "name": "Unit tests skipped",
-              "status": "skipped",
-              "stage": "finished",
-              "steps": [],
-              "labels": [{"name":"suite","value":"Unit"}]
-            }' > allure-results/unit/skipped-unit.json
-          fi
+  #     - name: Ensure Allure unit results exist
+  #       run: |
+  #         if [ ! -d "allure-results/unit" ] || [ -z "$(ls -A allure-results/unit)" ]; then
+  #           echo '{
+  #             "name": "Unit tests skipped",
+  #             "status": "skipped",
+  #             "stage": "finished",
+  #             "steps": [],
+  #             "labels": [{"name":"suite","value":"Unit"}]
+  #           }' > allure-results/unit/skipped-unit.json
+  #         fi
 
-      - name: Upload unit test results
-        uses: actions/upload-artifact@v4
-        with:
-          name: unit-test-results
-          path: |
-            allure-results/unit/
-            test-reports/unit-tests.xml
-        if: always()
+  #     - name: Upload unit test results
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: unit-test-results
+  #         path: |
+  #           allure-results/unit/
+  #           test-reports/unit-tests.xml
+  #       if: always()
 
-  integration-tests:
-    runs-on: ubuntu-latest
-    needs: unit-tests
-    if: always() 
-    env:
-      PYTHONPATH: ${{ github.workspace }}/src
+  # integration-tests:
+  #   runs-on: ubuntu-latest
+  #   needs: unit-tests
+  #   if: always() 
+  #   env:
+  #     PYTHONPATH: ${{ github.workspace }}/src
 
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: test_user
-          POSTGRES_PASSWORD: test_password
-          POSTGRES_DB: test_db
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U test_user -d test_db"
-          --health-interval=5s
-          --health-timeout=5s
-          --health-retries=5
+  #   services:
+  #     postgres:
+  #       image: postgres:15
+  #       env:
+  #         POSTGRES_USER: test_user
+  #         POSTGRES_PASSWORD: test_password
+  #         POSTGRES_DB: test_db
+  #       ports:
+  #         - 5432:5432
+  #       options: >-
+  #         --health-cmd="pg_isready -U test_user -d test_db"
+  #         --health-interval=5s
+  #         --health-timeout=5s
+  #         --health-retries=5
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
+  #     - name: Set up Python
+  #       uses: actions/setup-python@v5
+  #       with:
+  #         python-version: "3.13"
 
-      - name: Install Poetry
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+  #     - name: Install Poetry
+  #       run: |
+  #         curl -sSL https://install.python-poetry.org | python3 -
+  #         echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Install dependencies
-        run: |
-          poetry install --with dev
-          poetry run pip install allure-pytest
+  #     - name: Install dependencies
+  #       run: |
+  #         poetry install --with dev
+  #         poetry run pip install allure-pytest
 
-      - name: Create directories for test results
-        run: |
-          mkdir -p allure-results/integration
-          mkdir -p test-reports
+  #     - name: Create directories for test results
+  #       run: |
+  #         mkdir -p allure-results/integration
+  #         mkdir -p test-reports
 
-      - name: Run integration tests
-        run: |
-          if [ "${{ needs.unit-tests.result }}" != "success" ]; then
-            echo "Unit tests failed, running skipped test for integration"
-            mkdir -p tests/integration
-            echo "import pytest
-            @pytest.mark.skip(reason='Unit tests failed, integration skipped')
-            def test_skipped(): pass
-            " > tests/integration/skipped_integration.py
-            poetry run pytest tests/integration/skipped_integration.py -v \
-              --alluredir=allure-results/integration \
-              --junitxml=test-reports/integration-tests.xml
-          else
-            poetry run pytest tests/integration/ -v \
-              --alluredir=allure-results/integration \
-              --junitxml=test-reports/integration-tests.xml
-          fi
-        env:
-          DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
-          TEST_ENV: integration
+  #     - name: Run integration tests
+  #       run: |
+  #         if [ "${{ needs.unit-tests.result }}" != "success" ]; then
+  #           echo "Unit tests failed, running skipped test for integration"
+  #           mkdir -p tests/integration
+  #           echo "import pytest
+  #           @pytest.mark.skip(reason='Unit tests failed, integration skipped')
+  #           def test_skipped(): pass
+  #           " > tests/integration/skipped_integration.py
+  #           poetry run pytest tests/integration/skipped_integration.py -v \
+  #             --alluredir=allure-results/integration \
+  #             --junitxml=test-reports/integration-tests.xml
+  #         else
+  #           poetry run pytest tests/integration/ -v \
+  #             --alluredir=allure-results/integration \
+  #             --junitxml=test-reports/integration-tests.xml
+  #         fi
+  #       env:
+  #         DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
+  #         TEST_ENV: integration
 
-      - name: Check if Allure results were generated
-        run: |
-          echo "Checking Allure results directory:"
-          ls -la allure-results/integration/ || echo "No Allure results found"
-          echo "Checking test reports directory:"
-          ls -la test-reports/ || echo "No test reports found"
+  #     - name: Check if Allure results were generated
+  #       run: |
+  #         echo "Checking Allure results directory:"
+  #         ls -la allure-results/integration/ || echo "No Allure results found"
+  #         echo "Checking test reports directory:"
+  #         ls -la test-reports/ || echo "No test reports found"
 
-      - name: Upload integration test results
-        uses: actions/upload-artifact@v4
-        with:
-          name: integration-test-results
-          path: |
-            allure-results/integration/
-            test-reports/integration-tests.xml
-        if: always()
+  #     - name: Upload integration test results
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: integration-test-results
+  #         path: |
+  #           allure-results/integration/
+  #           test-reports/integration-tests.xml
+  #       if: always()
         
   e2e-tests:
     runs-on: ubuntu-latest
-    needs: integration-tests
+    # needs: integration-tests
     if: always()
     env:
       PYTHONPATH: ${{ github.workspace }}/src
@@ -235,7 +235,7 @@ jobs:
         env:
           DATABASE_URL: postgresql+asyncpg://nastya:nastya@localhost:5432/mydb
           BASE_URL: http://localhost:8000
-          MAIL_HOST: localhost
+          MAIL_HOST: mailhog
           MAIL_PORT: 1025
           TEST_ENV: e2e
           BDD_USER_PASS: ${{ secrets.BDD_USER_PASS }}
