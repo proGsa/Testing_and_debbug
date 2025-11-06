@@ -239,6 +239,13 @@ jobs:
           MAIL_PORT: 1025
           TEST_ENV: e2e
           BDD_USER_PASS: ${{ secrets.BDD_USER_PASS }}
+      - name: Check MailHog messages
+        run: |
+          echo "Checking MailHog messages..."
+          curl -s http://localhost:8025/api/v2/messages | jq '.items | length'
+      - name: Dump MailHog inbox
+        run: |
+          curl -s http://localhost:8025/api/v2/messages | jq '.items[] | {subject: .Content.Headers.Subject, body: .Content.Body}'
 
       - name: Ensure Allure e2e results exist
         run: |
