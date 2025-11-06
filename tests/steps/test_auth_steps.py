@@ -6,6 +6,7 @@ from pytest_bdd import scenarios, given, when, then
 from main import app  # для работы с ASGITransport не нужно, т.к. синхронно
 from models.user import User
 from faker import Faker
+import os
 
 fake = Faker('ru_RU')
 

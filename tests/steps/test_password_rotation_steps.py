@@ -4,6 +4,7 @@ from pytest_bdd import scenarios, given, when, then
 from main import app
 from models.user import User
 from faker import Faker
+import os
 
 fake = Faker('ru_RU')
 BDD_PASS = os.environ.get("BDD_USER_PASS")
