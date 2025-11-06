@@ -266,7 +266,6 @@ async def verify_2fa(data: Verify2FARequest, service_locator: ServiceLocator = g
 
 class TwoFARequest(BaseModel):
     login: str
-    # two_fa_token: str 
     code: str
 
 
