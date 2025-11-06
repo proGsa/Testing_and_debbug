@@ -80,7 +80,7 @@ class UserService(IUserService):
         user = await self.repository.get_by_login(login)
         if not user:
             raise ValueError("User not found")
-        user.password = new_password  # или используйте хеширование
+        user.password = new_password
         await self.repository.update(user)
 
 class AuthService(IAuthService):

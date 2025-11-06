@@ -31,8 +31,8 @@ templates = Jinja2Templates(directory="templates")
 
 get_sl_dep = Depends(get_service_locator)
 
-MAIL_HOST = os.getenv("MAIL_HOST", "localhost")
-MAIL_PORT = int(os.getenv("MAIL_PORT", "1025"))
+# MAIL_HOST = os.getenv("MAIL_HOST", "mailhog")
+# MAIL_PORT = int(os.getenv("MAIL_PORT", "1025"))
 
 async def send_email(to_email: str, subject: str, body: str) -> None:
     message = EmailMessage()
@@ -41,11 +41,11 @@ async def send_email(to_email: str, subject: str, body: str) -> None:
     message["Subject"] = subject
     message.set_content(body)
 
-    await aiosmtplib.send(
-        message,
-        hostname=MAIL_HOST,
-        port=MAIL_PORT
-    )
+    try:
+        await aiosmtplib.send(message, hostname="localhost", port=1025)
+        logger.info("Письмо отправлено на %s", to_email)
+    except Exception as e:
+        logger.error("Ошибка отправки письма: %s", e)
 
 
 @user_router.post("/api/register")
@@ -92,8 +92,17 @@ async def login1_user(request: Request, service_locator: ServiceLocator = get_sl
     login = data.get("login")
     password = data.get("password")
 
-    user = await service_locator.get_auth_serv().authenticate(login, password)
+    user = await service_locator.get_user_repo().get_by_login(login)
     if not user:
+        raise HTTPException(status_code=401, detail="Invalid login or password")
+    
+    if user.password == "W1rong_pas@s":  # или user.password_expired
+        return JSONResponse(
+            status_code=403,
+            content={"password_expired": True, "message": "Password expired"}
+        )
+    valid = await service_locator.get_auth_serv().authenticate(login, password)
+    if not valid:
         raise HTTPException(status_code=401, detail="Invalid login or password")
 
     code = await service_locator.get_auth_serv().generate_2fa_code(login)
@@ -287,3 +296,26 @@ async def login_2fa(data: TwoFARequest, service_locator: ServiceLocator = get_sl
 async def api_delete_user(user_id: int, service_locator: ServiceLocator = get_sl_dep) -> dict[str, Any]:
     result = await service_locator.get_user_contr().delete_user(user_id)
     return {"message": "User deleted", "result": result}
+
+class ExpirePasswordRequest(BaseModel):
+    login: str
+
+@user_router.post("/api/expire-password")
+async def expire_password(req: ExpirePasswordRequest, service_locator: ServiceLocator = get_sl_dep):
+    await service_locator.get_user_serv().update_password(req.login, "W1rong_pas@s")
+    # raise HTTPException(status_code=403, detail="Password expired")
+    return {"expired": True}
+
+class ChangePasswordRequest(BaseModel):
+    login: str
+    new_password: str
+
+@user_router.post("/api/change-password")
+async def change_password(data: ChangePasswordRequest, service_locator: ServiceLocator = get_sl_dep):
+    user = await service_locator.get_user_repo().get_by_login(data.login)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    await service_locator.get_user_serv().update_password(user.login, service_locator.get_auth_serv().get_password_hash(data.new_password))
+    
+    return {"message": "Password changed successfully"}

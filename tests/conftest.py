@@ -424,3 +424,4 @@ async def travel_service(db_session: AsyncSession) -> TravelService:
     accommodation_repo = AccommodationRepository(db_session, city_repo)
     travel_repo = TravelRepository(db_session, user_repo, entertainment_repo, accommodation_repo)
     return TravelService(travel_repo)
+
