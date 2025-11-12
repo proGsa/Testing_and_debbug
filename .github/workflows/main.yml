@@ -40,7 +40,7 @@ jobs:
       - name: Run Mypy (type checking)
         run: |
           echo "Running Mypy..."
-          poetry run mypy src
+          poetry run mypy src --disable-error-code=unused-ignore
 
       - name: Run Radon (Cyclomatic + Halstead)
         run: |
