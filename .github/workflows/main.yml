@@ -7,7 +7,50 @@ on:
     branches: [ main ]
 
 jobs:
+  static-analysis:
+    runs-on: ubuntu-latest
+    continue-on-error: false
+    env:
+      PYTHONPATH: ${{ github.workspace }}/src
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"  
+          
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: |
+          poetry install --with dev
+          poetry run pip install flake8 mypy radon
+
+      - name: Run Flake8 (style + complexity)
+        run: |
+          echo "Running Flake8..."
+          poetry run flake8 src --max-complexity 10
+
+      - name: Run Mypy (type checking)
+        run: |
+          echo "Running Mypy..."
+          poetry run mypy src
+
+      - name: Run Radon (Cyclomatic + Halstead)
+        run: |
+          echo "Cyclomatic Complexity check:"
+          poetry run radon cc src -a -nc
+          echo "Halstead Metrics:"
+          poetry run radon hal src
+
   unit-tests:
+    needs: static-analysis
     runs-on: ubuntu-latest
     continue-on-error: false
     env:
