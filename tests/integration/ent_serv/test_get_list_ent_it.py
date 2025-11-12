@@ -9,9 +9,11 @@ TWO = 2
 
 
 @pytest.mark.asyncio
-async def test_get_all_entertainments_success(entertainment_service: EntertainmentService) -> None:
+async def test_get_all_entertainments_success(
+    entertainment_service: EntertainmentService,
+) -> None:
     entertainments = await entertainment_service.get_list()
-    
+
     assert len(entertainments) == TWO
     names = [ent.event_name for ent in entertainments]
     assert "Концерт" in names

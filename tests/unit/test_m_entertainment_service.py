@@ -15,7 +15,9 @@ pytestmark = pytest.mark.unit
 
 
 @pytest.mark.asyncio
-async def test_service_should_successfull_delete_existed_entertainment(mock_entertainment_repo: Mock) -> None:
+async def test_service_should_successfull_delete_existed_entertainment(
+    mock_entertainment_repo: Mock,
+) -> None:
     service = EntertainmentService(mock_entertainment_repo)
 
     await service.delete(123)
@@ -24,24 +26,28 @@ async def test_service_should_successfull_delete_existed_entertainment(mock_ente
 
 
 @pytest.mark.asyncio
-async def test_service_should_throw_exception_at_delete_not_existed_entertainment(mock_entertainment_repo: Mock) -> None:
+async def test_service_should_throw_exception_at_delete_not_existed_entertainment(
+    mock_entertainment_repo: Mock,
+) -> None:
     mock_entertainment_repo.delete.side_effect = Exception("Not found")
     service = EntertainmentService(mock_entertainment_repo)
 
     with pytest.raises(ValueError, match=re.escape("Развлечение не найдено.")):
         await service.delete(123)
-    
+
     mock_entertainment_repo.delete.assert_awaited_once_with(123)
 
 
 @pytest.mark.asyncio
-async def test_should_succesfull_get_existed_entertainment_by_id(mock_entertainment_repo: Mock) -> None:
+async def test_should_succesfull_get_existed_entertainment_by_id(
+    mock_entertainment_repo: Mock,
+) -> None:
     entertainment = Entertainment(
         entertainment_id=1,
         duration="4 часа",
         address="Главная площадь",
         event_name="Концерт",
-        event_time=datetime(2023, 10, 10, 10, 0, 0)
+        event_time=datetime(2023, 10, 10, 10, 0, 0),
     )
     mock_entertainment_repo.get_by_id.return_value = entertainment
     service = EntertainmentService(mock_entertainment_repo)
@@ -69,7 +75,7 @@ async def test_get_list_success(mock_entertainment_repo: Mock) -> None:
             duration="4 часа",
             address="Главная площадь",
             event_name="Концерт",
-            event_time=datetime(2023, 10, 10, 10, 0, 0)
+            event_time=datetime(2023, 10, 10, 10, 0, 0),
         )
     ]
     mock_entertainment_repo.get_list.return_value = entertainments
@@ -97,7 +103,7 @@ async def test_add_success(mock_entertainment_repo: Mock) -> None:
         duration="4 часа",
         address="Главная площадь",
         event_name="Концерт",
-        event_time=datetime(2023, 10, 10, 10, 0, 0)
+        event_time=datetime(2023, 10, 10, 10, 0, 0),
     )
     mock_entertainment_repo.add.return_value = entertainment
     service = EntertainmentService(mock_entertainment_repo)
@@ -115,7 +121,7 @@ async def test_add_failure(mock_entertainment_repo: Mock) -> None:
         duration="4 часа",
         address="Главная площадь",
         event_name="Концерт",
-        event_time=datetime(2023, 10, 10, 10, 0, 0)
+        event_time=datetime(2023, 10, 10, 10, 0, 0),
     )
     mock_entertainment_repo.add.side_effect = ValueError("Duplicate")
     service = EntertainmentService(mock_entertainment_repo)
@@ -131,7 +137,7 @@ async def test_update_success(mock_entertainment_repo: Mock) -> None:
         duration="4 часа",
         address="Главная площадь",
         event_name="Концерт",
-        event_time=datetime(2023, 10, 10, 10, 0, 0)
+        event_time=datetime(2023, 10, 10, 10, 0, 0),
     )
     mock_entertainment_repo.update.return_value = entertainment
     service = EntertainmentService(mock_entertainment_repo)
@@ -149,7 +155,7 @@ async def test_update_failure(mock_entertainment_repo: Mock) -> None:
         duration="4 часа",
         address="Главная площадь",
         event_name="Концерт",
-        event_time=datetime(2023, 10, 10, 10, 0, 0)
+        event_time=datetime(2023, 10, 10, 10, 0, 0),
     )
     mock_entertainment_repo.update.side_effect = ValueError("Not found")
     service = EntertainmentService(mock_entertainment_repo)

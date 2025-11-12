@@ -22,5 +22,3 @@ class IEntertainmentService(ABC):
     @abstractmethod
     async def delete(self, entertainment_id: int) -> None:
         pass
-
-

@@ -18,7 +18,9 @@ logger = logging.getLogger(__name__)
 
 
 class EntertainmentController:
-    def __init__(self, entertainment_service: EntertainmentService, city_service: CityService) -> None:
+    def __init__(
+        self, entertainment_service: EntertainmentService, city_service: CityService
+    ) -> None:
         self.entertainment_service = entertainment_service
         self.city_service = city_service
         logger.debug("Инициализация EntertainmentController")
@@ -33,13 +35,15 @@ class EntertainmentController:
             logger.info("Развлечение успешно создано: %s", entertainment)
             return {
                 "message": "Entertainment created successfully",
-                "entertainment_id": entertainment.entertainment_id  # Вот здесь ID возвращается
+                "entertainment_id": entertainment.entertainment_id,
             }
         except Exception as e:
             logger.error("Ошибка при создании развлечения: %s", str(e), exc_info=True)
             return {"message": "Error creating entertainment", "error": str(e)}
 
-    async def update_entertainment(self, entertainment_id: int, request: Request) -> dict[str, Any]:
+    async def update_entertainment(
+        self, entertainment_id: int, request: Request
+    ) -> dict[str, Any]:
         try:
             data = await request.json()
             data["entertainment_id"] = entertainment_id
@@ -49,14 +53,21 @@ class EntertainmentController:
             logger.info("Развлечение ID %d успешно обновлено", entertainment_id)
             return {"message": "Entertainment updated successfully"}
         except Exception as e:
-            logger.error("Ошибка при обновлении развлечения ID %d: %s", entertainment_id, str(e), exc_info=True)
+            logger.error(
+                "Ошибка при обновлении развлечения ID %d: %s",
+                entertainment_id,
+                str(e),
+                exc_info=True,
+            )
             return {"message": "Error updating entertainment", "error": str(e)}
-            
+
     async def get_entertainment_details(self, entertainment_id: int) -> dict[str, Any]:
         try:
             entertainment = await self.entertainment_service.get_by_id(entertainment_id)
             if entertainment:
-                logger.info("Развлечение ID %d найдено: %s", entertainment_id, entertainment)
+                logger.info(
+                    "Развлечение ID %d найдено: %s", entertainment_id, entertainment
+                )
                 return {
                     "entertainment": {
                         "id": entertainment.entertainment_id,
@@ -64,8 +75,8 @@ class EntertainmentController:
                         "address": entertainment.address,
                         "event_name": entertainment.event_name,
                         "event_time": entertainment.event_time.isoformat(),
-                        "city": entertainment.city
-                        }
+                        "city": entertainment.city,
+                    }
                 }
             logger.warning("Развлечение ID %d не найдено", entertainment_id)
             return {"message": "Entertainment not found"}
@@ -73,7 +84,11 @@ class EntertainmentController:
             logger.warning("Некорректный JSON в теле запроса")
             return {"message": "Invalid JSON in request"}
         except Exception as e:
-            logger.error("Ошибка при получении информации о развлечении: %s", str(e), exc_info=True)
+            logger.error(
+                "Ошибка при получении информации о развлечении: %s",
+                str(e),
+                exc_info=True,
+            )
             return {"message": "Error fetching details", "error": str(e)}
 
     async def get_all_entertainment(self) -> dict[str, Any]:
@@ -88,13 +103,15 @@ class EntertainmentController:
                         "address": e.address,
                         "event_name": e.event_name,
                         "event_time": e.event_time.isoformat(),
-                        "city": e.city
+                        "city": e.city,
                     }
                     for e in entertainment_list
                 ]
             }
         except Exception as e:
-            logger.error("Ошибка при получении списка развлечений: %s", str(e), exc_info=True)
+            logger.error(
+                "Ошибка при получении списка развлечений: %s", str(e), exc_info=True
+            )
             return {"message": "Error fetching entertainments", "error": str(e)}
 
     async def delete_entertainment(self, entertainment_id: int) -> dict[str, Any]:
@@ -103,10 +120,17 @@ class EntertainmentController:
             logger.info("Развлечение ID %d успешно удалено", entertainment_id)
             return {"message": "Entertainment deleted successfully"}
         except Exception as e:
-            logger.error("Ошибка при удалении развлечения ID %d: %s", entertainment_id, str(e), exc_info=True)
+            logger.error(
+                "Ошибка при удалении развлечения ID %d: %s",
+                entertainment_id,
+                str(e),
+                exc_info=True,
+            )
             return {"message": "Error deleting entertainment", "error": str(e)}
-    
-    async def update_entertainment_dates(self, entertainment_id: int, request: Request) -> dict[str, Any]:
+
+    async def update_entertainment_dates(
+        self, entertainment_id: int, request: Request
+    ) -> dict[str, Any]:
         try:
             data = await request.json()
             entertainment = await self.entertainment_service.get_by_id(entertainment_id)
@@ -114,16 +138,21 @@ class EntertainmentController:
                 raise HTTPException(status_code=404, detail="Entertainment not found")
 
             entertainment.event_time = datetime.fromisoformat(data["event_time"])
-            entertainment.duration = data['duration']
-            
+            entertainment.duration = data["duration"]
+
             await self.entertainment_service.update(entertainment)
-            
-            logger.info("Даты и продолжительность мероприятия ID %d успешно обновлены", entertainment_id)
-            return {
-                "message": "Entertainment dates and duration updated successfully"
-            }
-            
+
+            logger.info(
+                "Даты и продолжительность мероприятия ID %d успешно обновлены",
+                entertainment_id,
+            )
+            return {"message": "Entertainment dates and duration updated successfully"}
+
         except Exception as e:
-            logger.error("Ошибка при обновлении дат проживания ID %d: %s", 
-                    entertainment_id, str(e), exc_info=True)
+            logger.error(
+                "Ошибка при обновлении дат проживания ID %d: %s",
+                entertainment_id,
+                str(e),
+                exc_info=True,
+            )
             raise HTTPException(status_code=400, detail=str(e))

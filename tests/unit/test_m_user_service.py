@@ -20,13 +20,14 @@ pytestmark = pytest.mark.unit
 @pytest.mark.asyncio
 async def test_service_should_registrate_user() -> None:
     user = User(
-        user_id=1, 
+        user_id=1,
         fio="Лобач Анастасия Олеговна",
-        number_passport="1234567890", 
-        phone_number="89261111111", 
-        email="nl@ii.info", 
-        login="proGsa", 
-        password="1234D!f333")
+        number_passport="1234567890",
+        phone_number="89261111111",
+        email="nl@ii.info",
+        login="proGsa",
+        password="1234D!f333",
+    )
     repo = Mock(spec=UserRepository, autospec=True)
     repo.add = AsyncMock(return_value=user)
 
@@ -39,14 +40,23 @@ async def test_service_should_registrate_user() -> None:
 
 @pytest.mark.asyncio
 async def test_registrate_failure_duplicate() -> None:
-    user = User(user_id=1, fio="Test", number_passport="1266449003",
-                phone_number="89098866123", email="t@t.com", login="login", password="pas!11fdfDAs")
+    user = User(
+        user_id=1,
+        fio="Test",
+        number_passport="1266449003",
+        phone_number="89098866123",
+        email="t@t.com",
+        login="login",
+        password="pas!11fdfDAs",
+    )
 
     repo = Mock(spec=UserRepository, autospec=True)
     repo.add = AsyncMock(side_effect=Exception("duplicate"))
 
     auth = AuthService(repo)
-    with pytest.raises(ValueError, match=re.escape("Пользователь с таким логином уже существует")):
+    with pytest.raises(
+        ValueError, match=re.escape("Пользователь с таким логином уже существует")
+    ):
         await auth.registrate(user)
 
 
@@ -74,13 +84,14 @@ async def test_service_should_throw_exception_at_delete_not_existed_user() -> No
 @pytest.mark.asyncio
 async def test_should_succesfull_get_existed_user_by_id() -> None:
     user = User(
-        user_id=1, 
+        user_id=1,
         fio="Лобач Анастасия Олеговна",
-        number_passport="1234567890", 
-        phone_number="89261111111", 
-        email="nl@ii.info", 
-        login="proGsa", 
-        password="1234D!f333")
+        number_passport="1234567890",
+        phone_number="89261111111",
+        email="nl@ii.info",
+        login="proGsa",
+        password="1234D!f333",
+    )
 
     repo = Mock(spec=UserRepository, autospec=True)
     repo.get_by_id = AsyncMock(return_value=user)
@@ -106,8 +117,17 @@ async def test_service_should_throw_exception_at_get_not_existed_user() -> None:
 
 @pytest.mark.asyncio
 async def test_get_list_success() -> None:
-    users = [User(user_id=1, fio="U1", number_passport="1000888896", phone_number="89961294321",
-                  email="1@test.com", login="u1", password="padaAQD11!1")]
+    users = [
+        User(
+            user_id=1,
+            fio="U1",
+            number_passport="1000888896",
+            phone_number="89961294321",
+            email="1@test.com",
+            login="u1",
+            password="padaAQD11!1",
+        )
+    ]
     repo = Mock(spec=UserRepository, autospec=True)
     repo.get_list = AsyncMock(return_value=users)
 
@@ -131,13 +151,14 @@ async def test_get_list_failure() -> None:
 @pytest.mark.asyncio
 async def test_should_succesfull_update_existed_user_by_id() -> None:
     user = User(
-        user_id=1, 
+        user_id=1,
         fio="Лобач Анастасия Олеговна",
-        number_passport="1234567890", 
-        phone_number="89261111111", 
-        email="nl@ii.info", 
-        login="proGsa", 
-        password="1234D!f333")
+        number_passport="1234567890",
+        phone_number="89261111111",
+        email="nl@ii.info",
+        login="proGsa",
+        password="1234D!f333",
+    )
 
     repo = Mock(spec=UserRepository, autospec=True)
     repo.update = AsyncMock(return_value=user)
@@ -152,13 +173,14 @@ async def test_should_succesfull_update_existed_user_by_id() -> None:
 @pytest.mark.asyncio
 async def test_service_should_throw_exception_at_update_not_existed_user() -> None:
     user = User(
-        user_id=1, 
+        user_id=1,
         fio="Лобач Анастасия Олеговна",
-        number_passport="1234567890", 
-        phone_number="89261111111", 
-        email="nl@ii.info", 
-        login="proGsa", 
-        password="1234D!f333")
+        number_passport="1234567890",
+        phone_number="89261111111",
+        email="nl@ii.info",
+        login="proGsa",
+        password="1234D!f333",
+    )
     repo = Mock(spec=UserRepository, autospec=True)
     repo.update = AsyncMock(side_effect=Exception("not found"))
 
@@ -172,13 +194,14 @@ async def test_should_succesfull_login_existed_user_with_right_password() -> Non
     password = "secre!Se@t123"
     hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
     user = User(
-        user_id=1, 
+        user_id=1,
         fio="Лобач Анастасия Олеговна",
-        number_passport="1234567890", 
-        phone_number="89261111111", 
-        email="nl@ii.info", 
-        login="proGsa", 
-        password=hashed)
+        number_passport="1234567890",
+        phone_number="89261111111",
+        email="nl@ii.info",
+        login="proGsa",
+        password=hashed,
+    )
 
     repo = Mock(spec=UserRepository, autospec=True)
     repo.get_by_login = AsyncMock(return_value=user)
@@ -195,13 +218,14 @@ async def test_should_succesfull_login_existed_user_with_wrong_password() -> Non
     password = "secret123"
     hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
     user = User(
-        user_id=1, 
+        user_id=1,
         fio="Лобач Анастасия Олеговна",
-        number_passport="1234567890", 
-        phone_number="89261111111", 
-        email="nl@ii.info", 
-        login="proGsa", 
-        password=hashed)
+        number_passport="1234567890",
+        phone_number="89261111111",
+        email="nl@ii.info",
+        login="proGsa",
+        password=hashed,
+    )
 
     repo = Mock(spec=UserRepository, autospec=True)
     repo.get_by_login = AsyncMock(return_value=user)
@@ -223,8 +247,16 @@ async def test_verify_password_and_hash() -> None:
 
 @pytest.mark.asyncio
 async def test_jwt_token_cycle() -> None:
-    user = User(user_id=42, fio="U", number_passport="1111111111", phone_number="89110223813",
-                email="u@u.com", login="user", password="pada!!!d2ekS", is_admin=True)
+    user = User(
+        user_id=42,
+        fio="U",
+        number_passport="1111111111",
+        phone_number="89110223813",
+        email="u@u.com",
+        login="user",
+        password="pada!!!d2ekS",
+        is_admin=True,
+    )
 
     token = AuthService.create_access_token(user)
     decoded = AuthService.decode_token(token)
@@ -236,9 +268,15 @@ async def test_jwt_token_cycle() -> None:
 
 @pytest.mark.asyncio
 async def test_add_user_success() -> None:
-    user = User(user_id=1, fio="Test", number_passport="1234567890",
-                phone_number="89111111111", email="test@test.com",
-                login="login", password="pD!D12edaass")
+    user = User(
+        user_id=1,
+        fio="Test",
+        number_passport="1234567890",
+        phone_number="89111111111",
+        email="test@test.com",
+        login="login",
+        password="pD!D12edaass",
+    )
 
     repo = Mock(spec=UserRepository, autospec=True)
     repo.add = AsyncMock(return_value=user)
@@ -252,13 +290,21 @@ async def test_add_user_success() -> None:
 
 @pytest.mark.asyncio
 async def test_add_user_failure_duplicate() -> None:
-    user = User(user_id=1, fio="Test", number_passport="1234567890",
-                phone_number="89111111111", email="test@test.com",
-                login="login", password="pa!22ksOAsss")
+    user = User(
+        user_id=1,
+        fio="Test",
+        number_passport="1234567890",
+        phone_number="89111111111",
+        email="test@test.com",
+        login="login",
+        password="pa!22ksOAsss",
+    )
 
     repo = Mock(spec=UserRepository, autospec=True)
     repo.add = AsyncMock(side_effect=Exception("duplicate"))
 
     service = UserService(repo)
-    with pytest.raises(ValueError, match=re.escape("Администратор c таким ID уже существует.")):
+    with pytest.raises(
+        ValueError, match=re.escape("Администратор c таким ID уже существует.")
+    ):
         await service.add(user)

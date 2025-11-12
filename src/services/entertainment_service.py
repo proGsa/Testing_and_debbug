@@ -21,19 +21,28 @@ class EntertainmentService(IEntertainmentService):
 
     async def add(self, entertainment: Entertainment) -> Entertainment:
         try:
-            logger.debug("Добавление развлечения с ID %d", entertainment.entertainment_id)
+            logger.debug(
+                "Добавление развлечения с ID %d", entertainment.entertainment_id
+            )
             entertainment = await self.repository.add(entertainment)
-        except (Exception):
-            logger.error("Развлечение c таким ID %d уже существует.", entertainment.entertainment_id)
+        except Exception:
+            logger.error(
+                "Развлечение c таким ID %d уже существует.",
+                entertainment.entertainment_id,
+            )
             raise ValueError("Развлечение c таким ID уже существует.")
         return entertainment
 
     async def update(self, update_entertainment: Entertainment) -> Entertainment:
         try:
-            logger.debug("Обновление развлечения с ID %d", update_entertainment.entertainment_id)
+            logger.debug(
+                "Обновление развлечения с ID %d", update_entertainment.entertainment_id
+            )
             await self.repository.update(update_entertainment)
-        except (Exception):
-            logger.error("Развлечение с ID %d не найдено.", update_entertainment.entertainment_id)
+        except Exception:
+            logger.error(
+                "Развлечение с ID %d не найдено.", update_entertainment.entertainment_id
+            )
             raise ValueError("Развлечение не найдено.")
         return update_entertainment
 
@@ -41,7 +50,7 @@ class EntertainmentService(IEntertainmentService):
         try:
             logger.debug("Удаление развлечения с ID %d", entertainment_id)
             await self.repository.delete(entertainment_id)
-        except (Exception):
+        except Exception:
             logger.error("Развлечение с ID %d не найдено.", entertainment_id)
             raise ValueError("Развлечение не найдено.")
 

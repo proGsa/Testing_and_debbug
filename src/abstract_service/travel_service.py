@@ -13,7 +13,7 @@ class ITravelService(ABC):
     @abstractmethod
     async def get_by_id(self, travel_id: int) -> Travel | None:
         pass
-    
+
     @abstractmethod
     async def get_all_travels(self) -> list[Travel]:
         pass
@@ -29,4 +29,3 @@ class ITravelService(ABC):
     @abstractmethod
     async def delete(self, travel_id: int) -> None:
         pass
-

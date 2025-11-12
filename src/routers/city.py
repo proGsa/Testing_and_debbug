@@ -23,28 +23,30 @@ get_sl_dep = Depends(get_service_locator)
 
 
 @city_router.post("/api/cities", response_class=HTMLResponse)
-async def create_city(request: Request, service_locator: ServiceLocator = get_sl_dep) -> HTMLResponse:
+async def create_city(
+    request: Request, service_locator: ServiceLocator = get_sl_dep
+) -> HTMLResponse:
     result = await service_locator.get_city_contr().create_new_city(request)
     logger.info("Город успешно создан: %s", result)
     return templates.TemplateResponse("city.html", {"request": request})
 
 
 @city_router.get("/city.html", response_class=HTMLResponse)
-async def get_all_cities(request: Request, service_locator: ServiceLocator = get_sl_dep) -> HTMLResponse:
+async def get_all_cities(
+    request: Request, service_locator: ServiceLocator = get_sl_dep
+) -> HTMLResponse:
     city_list = await service_locator.get_city_contr().get_all_cities()
     cities = city_list.get("cities", [])
     logger.info("Получено %d городов", len(cities))
     return templates.TemplateResponse(
-        "city.html",
-        {
-            "request": request,
-            "cities": cities
-        }
+        "city.html", {"request": request, "cities": cities}
     )
 
 
 @city_router.get("/city.html")
-async def get_city(request: Request, service_locator: ServiceLocator = get_sl_dep) -> dict[str, Any]:
+async def get_city(
+    request: Request, service_locator: ServiceLocator = get_sl_dep
+) -> dict[str, Any]:
     result = await service_locator.get_city_contr().get_city_details(request)
     if result is None:
         logger.warning("Город не найден")
@@ -54,14 +56,18 @@ async def get_city(request: Request, service_locator: ServiceLocator = get_sl_de
 
 
 @city_router.put("/api/cities/{city_id}", response_class=HTMLResponse)
-async def update_city(city_id: int, request: Request, service_locator: ServiceLocator = get_sl_dep) -> HTMLResponse:
+async def update_city(
+    city_id: int, request: Request, service_locator: ServiceLocator = get_sl_dep
+) -> HTMLResponse:
     result = await service_locator.get_city_contr().update_city(city_id, request)
     logger.info("Город ID %d успешно обновлен: %s", city_id, result)
     return templates.TemplateResponse("city.html", {"request": request})
 
 
 @city_router.post("/city/delete/{city_id}", response_class=HTMLResponse)
-async def delete_city(city_id: int, service_locator: ServiceLocator = get_sl_dep) -> RedirectResponse:
+async def delete_city(
+    city_id: int, service_locator: ServiceLocator = get_sl_dep
+) -> RedirectResponse:
     result = await service_locator.get_city_contr().delete_city(city_id)
     logger.info("Город ID %d успешно удален: %s", city_id, result)
     return RedirectResponse(url="/city.html", status_code=303)

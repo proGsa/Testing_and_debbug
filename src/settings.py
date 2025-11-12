@@ -6,7 +6,7 @@ import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 config = configparser.ConfigParser()
-config.read(os.path.join(BASE_DIR, 'config.cfg'))
+config.read(os.path.join(BASE_DIR, "config.cfg"))
 
 
 class Settings:

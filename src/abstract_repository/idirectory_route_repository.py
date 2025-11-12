@@ -28,9 +28,13 @@ class IDirectoryRouteRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_by_cities(self, from_city_id: int, to_city_id: int, type_transport: str) -> DirectoryRoute | None:
+    async def get_by_cities(
+        self, from_city_id: int, to_city_id: int, type_transport: str
+    ) -> DirectoryRoute | None:
         pass
 
     @abstractmethod
-    async def change_transport(self, d_route_id: int, new_transport: str) -> DirectoryRoute | None:
+    async def change_transport(
+        self, d_route_id: int, new_transport: str
+    ) -> DirectoryRoute | None:
         pass

@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 
 # from contextlib import AsyncGenerator
+from typing import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -28,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Запуск приложения")
     yield
     logger.info("Завершение работы приложения")
@@ -42,7 +43,7 @@ routers = [
     user_router,
     accommodation_router,
     travel_router,
-    entertainment_router
+    entertainment_router,
 ]
 
 for r in routers:

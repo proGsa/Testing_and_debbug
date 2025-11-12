@@ -24,17 +24,16 @@ class CityRepository(ICityRepository):
         try:
             result = await self.session.execute(query)
             cities = [
-                City(
-                    city_id=row["city_id"],
-                    name=row["name"]
-                )
+                City(city_id=row["city_id"], name=row["name"])
                 for row in result.mappings()
             ]
             logger.debug("Успешно получено %d городов", len(cities))
             return cities
         except SQLAlchemyError as e:
-            logger.error("Ошибка при получении списка городов: %s", str(e), exc_info=True)
-            raise 
+            logger.error(
+                "Ошибка при получении списка городов: %s", str(e), exc_info=True
+            )
+            raise
 
     async def get_by_id(self, city_id: int) -> City | None:
         query = text("SELECT * FROM city WHERE city_id = :city_id")
@@ -43,22 +42,26 @@ class CityRepository(ICityRepository):
             city_data = result.mappings().first()
             if city_data:
                 logger.debug("Найден город ID %d: %s", city_id, city_data["name"])
-                return City(
-                    city_id=city_data["city_id"],
-                    name=city_data["name"]
-                )
+                return City(city_id=city_data["city_id"], name=city_data["name"])
             logger.warning("Город с ID %d не найден", city_id)
             return None
         except SQLAlchemyError as e:
-            logger.error("Ошибка при получении города по ID %d: %s", city_id, str(e), exc_info=True)
+            logger.error(
+                "Ошибка при получении города по ID %d: %s",
+                city_id,
+                str(e),
+                exc_info=True,
+            )
             return None
 
     async def add(self, city: City) -> City:
-        query = text("""
+        query = text(
+            """
             INSERT INTO city (name)
             VALUES (:name)
             RETURNING city_id
-        """)
+        """
+        )
         try:
             row = await self.session.execute(query, {"name": city.name})
             new_id = row.scalar_one()
@@ -70,28 +73,38 @@ class CityRepository(ICityRepository):
             await self.session.rollback()
             raise
         except SQLAlchemyError as e:
-            logger.error("Ошибка при добавлении города '%s': %s", city.name, str(e), exc_info=True)
+            logger.error(
+                "Ошибка при добавлении города '%s': %s",
+                city.name,
+                str(e),
+                exc_info=True,
+            )
             await self.session.rollback()
             raise
         return city
 
     async def update(self, update_city: City) -> None:
-        query = text("""
+        query = text(
+            """
             UPDATE city
             SET name = :name
             WHERE city_id = :city_id
-        """)
+        """
+        )
         try:
-            await self.session.execute(query, {
-                "city_id": update_city.city_id,
-                "name": update_city.name
-            })
+            await self.session.execute(
+                query, {"city_id": update_city.city_id, "name": update_city.name}
+            )
             await self.session.commit()
             logger.debug("Город ID %d успешно обновлен", update_city.city_id)
         except SQLAlchemyError as e:
             await self.session.rollback()
-            logger.error("Ошибка при обновлении города ID %d: %s", 
-                       update_city.city_id, str(e), exc_info=True)
+            logger.error(
+                "Ошибка при обновлении города ID %d: %s",
+                update_city.city_id,
+                str(e),
+                exc_info=True,
+            )
 
     async def delete(self, city_id: int) -> None:
         query = text("DELETE FROM city WHERE city_id = :city_id")
@@ -100,7 +113,7 @@ class CityRepository(ICityRepository):
             await self.session.commit()
             logger.debug("Город ID %d успешно удален", city_id)
         except SQLAlchemyError as e:
-            logger.error("Ошибка при удалении города ID %d: %s", city_id, str(e), exc_info=True)
+            logger.error(
+                "Ошибка при удалении города ID %d: %s", city_id, str(e), exc_info=True
+            )
             await self.session.rollback()
-
-

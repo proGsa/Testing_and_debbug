@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 
 import allure
 import httpx
@@ -9,11 +8,11 @@ import pytest
 from faker import Faker
 
 
-fake = Faker('ru_RU')
+fake = Faker("ru_RU")
 TMP = 200
 
 
-@allure.feature("E2E City Management") 
+@allure.feature("E2E City Management")
 @allure.story("Login and add city flow")
 class TestCityManagementE2E:
     @pytest.mark.asyncio
@@ -32,10 +31,14 @@ class TestCityManagementE2E:
 
             with allure.step("Create new city 'Сочи'"):
                 try:
-                    create_resp = await client.post("/api/cities", json={"name": "Сочи"}, headers=headers)
+                    create_resp = await client.post(
+                        "/api/cities", json={"name": "Сочи"}, headers=headers
+                    )
                 except:
-                    create_resp = await client.post("/api/cities", data={"name": "Сочи"}, headers=headers)
-                
+                    create_resp = await client.post(
+                        "/api/cities", data={"name": "Сочи"}, headers=headers
+                    )
+
                 print(f"Create city response: {create_resp.status_code}")
                 assert create_resp.status_code in (200, 201)
 
@@ -43,6 +46,6 @@ class TestCityManagementE2E:
                 list_resp = await client.get("/city.html", headers=headers)
                 print(f"HTML page status: {list_resp.status_code}")
                 print(f"HTML content length: {len(list_resp.text)}")
-                
+
                 assert list_resp.status_code == TMP
                 assert "Сочи" in list_resp.text

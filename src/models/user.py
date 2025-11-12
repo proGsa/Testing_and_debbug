@@ -24,8 +24,8 @@ class User(BaseModel):
     login: str
     password: str
     is_admin: bool = False
-    model_config = ConfigDict(validate_by_name=True)
-        
+    model_config = ConfigDict(populate_by_name=True)
+
     @field_validator("user_id")
     @classmethod
     def validate_check_user_id(cls, value: int) -> int:
@@ -55,7 +55,9 @@ class User(BaseModel):
     @classmethod
     def validate_phone_number(cls, v: str) -> str:
         if not re.fullmatch(r"8\d{10}", v):
-            raise ValueError("Номер телефона должен содержать 11 цифр и первая цифра -- 8")
+            raise ValueError(
+                "Номер телефона должен содержать 11 цифр и первая цифра -- 8"
+            )
         return v
 
     @field_validator("number_passport")

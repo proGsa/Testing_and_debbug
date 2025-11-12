@@ -18,7 +18,14 @@ pytestmark = pytest.mark.unit
 
 @pytest.mark.asyncio
 async def test_should_successfull_get_route_by_id() -> None:
-    route = Route(route_id=1, d_route=None, travels=None, start_time=datetime(2025, 1, 1, 12, 0, 0), end_time=datetime(2025, 1, 2, 12, 0, 0), type="Свои")
+    route = Route(
+        route_id=1,
+        d_route=None,
+        travels=None,
+        start_time=datetime(2025, 1, 1, 12, 0, 0),
+        end_time=datetime(2025, 1, 2, 12, 0, 0),
+        type="Свои",
+    )
     repo = Mock(spec=RouteRepository, autospec=True)
     repo.get_by_id = AsyncMock(return_value=route)
 
@@ -41,7 +48,16 @@ async def test_should_throw_exception_when_get_by_id_fails() -> None:
 
 @pytest.mark.asyncio
 async def test_should_successfull_get_all_routes() -> None:
-    routes = [Route(route_id=1, d_route=None, travels=None, start_time=datetime(2025, 1, 1, 12, 0, 0), end_time=datetime(2025, 1, 3, 12, 0, 0), type="Свои")]
+    routes = [
+        Route(
+            route_id=1,
+            d_route=None,
+            travels=None,
+            start_time=datetime(2025, 1, 1, 12, 0, 0),
+            end_time=datetime(2025, 1, 3, 12, 0, 0),
+            type="Свои",
+        )
+    ]
     repo = Mock(spec=RouteRepository, autospec=True)
     repo.get_list = AsyncMock(return_value=routes)
 
@@ -54,7 +70,14 @@ async def test_should_successfull_get_all_routes() -> None:
 
 @pytest.mark.asyncio
 async def test_should_successfull_add_route() -> None:
-    route = Route(route_id=1, d_route=None, travels=None, start_time=datetime(2025, 1, 1, 12, 0, 0), end_time=datetime(2025, 1, 3, 12, 0, 0), type="Свои")
+    route = Route(
+        route_id=1,
+        d_route=None,
+        travels=None,
+        start_time=datetime(2025, 1, 1, 12, 0, 0),
+        end_time=datetime(2025, 1, 3, 12, 0, 0),
+        type="Свои",
+    )
     repo = Mock(spec=RouteRepository, autospec=True)
     repo.add = AsyncMock(return_value=route)
 
@@ -67,18 +90,34 @@ async def test_should_successfull_add_route() -> None:
 
 @pytest.mark.asyncio
 async def test_should_throw_exception_at_add_duplicate() -> None:
-    route = Route(route_id=1, d_route=None, travels=None, start_time=datetime(2025, 1, 1, 12, 0, 0), end_time=datetime(2025, 1, 3, 12, 0, 0), type="Свои")
+    route = Route(
+        route_id=1,
+        d_route=None,
+        travels=None,
+        start_time=datetime(2025, 1, 1, 12, 0, 0),
+        end_time=datetime(2025, 1, 3, 12, 0, 0),
+        type="Свои",
+    )
     repo = Mock(spec=RouteRepository, autospec=True)
     repo.add = AsyncMock(side_effect=Exception)
 
     service = RouteService(repo)
-    with pytest.raises(ValueError, match=re.escape("Маршрут c таким ID уже существует.")):
+    with pytest.raises(
+        ValueError, match=re.escape("Маршрут c таким ID уже существует.")
+    ):
         await service.add(route)
 
 
 @pytest.mark.asyncio
 async def test_should_successfull_update_route() -> None:
-    route = Route(route_id=1, d_route=None, travels=None, start_time=datetime(2025, 1, 1, 12, 0, 0), end_time=datetime(2025, 1, 3, 12, 0, 0), type="Свои")
+    route = Route(
+        route_id=1,
+        d_route=None,
+        travels=None,
+        start_time=datetime(2025, 1, 1, 12, 0, 0),
+        end_time=datetime(2025, 1, 3, 12, 0, 0),
+        type="Свои",
+    )
     repo = Mock(spec=RouteRepository, autospec=True)
     repo.update = AsyncMock(return_value=None)
 
@@ -91,7 +130,14 @@ async def test_should_successfull_update_route() -> None:
 
 @pytest.mark.asyncio
 async def test_should_throw_exception_at_update_not_existed() -> None:
-    route = Route(route_id=1, d_route=None, travels=None, start_time=datetime(2025, 1, 1, 12, 0, 0), end_time=datetime(2025, 1, 3, 12, 0, 0), type="Свои")
+    route = Route(
+        route_id=1,
+        d_route=None,
+        travels=None,
+        start_time=datetime(2025, 1, 1, 12, 0, 0),
+        end_time=datetime(2025, 1, 3, 12, 0, 0),
+        type="Свои",
+    )
     repo = Mock(spec=RouteRepository, autospec=True)
     repo.update = AsyncMock(side_effect=Exception)
 
@@ -159,13 +205,22 @@ async def test_should_throw_exception_at_delete_city_from_route() -> None:
     repo.delete_city_from_route = AsyncMock(side_effect=Exception)
 
     service = RouteService(repo)
-    with pytest.raises(ValueError, match=re.escape("Город не получилось удалить из маршрута.")):
+    with pytest.raises(
+        ValueError, match=re.escape("Город не получилось удалить из маршрута.")
+    ):
         await service.delete_city_from_route(1, 2)
 
 
 @pytest.mark.asyncio
 async def test_should_successfull_change_transport() -> None:
-    route = Route(route_id=1, d_route=None, travels=None, start_time=datetime(2025, 1, 1, 12, 0, 0), end_time=datetime(2025, 1, 3, 12, 0, 0), type="Свои")
+    route = Route(
+        route_id=1,
+        d_route=None,
+        travels=None,
+        start_time=datetime(2025, 1, 1, 12, 0, 0),
+        end_time=datetime(2025, 1, 3, 12, 0, 0),
+        type="Свои",
+    )
     repo = Mock(spec=RouteRepository, autospec=True)
     repo.change_transport = AsyncMock(return_value=route)
 
@@ -182,13 +237,24 @@ async def test_should_throw_exception_at_change_transport() -> None:
     repo.change_transport = AsyncMock(side_effect=Exception)
 
     service = RouteService(repo)
-    with pytest.raises(ValueError, match=re.escape("Город не получилось удалить из маршрута.")):
+    with pytest.raises(
+        ValueError, match=re.escape("Город не получилось удалить из маршрута.")
+    ):
         await service.change_transport(1, 1, "поезд")
 
 
 @pytest.mark.asyncio
 async def test_should_successfull_get_routes_by_user_and_status_and_type() -> None:
-    routes = [Route(route_id=1, d_route=None, travels=None, start_time=datetime(2025, 1, 1, 12, 0, 0), end_time=datetime(2025, 1, 3, 12, 0, 0), type="Свои")]
+    routes = [
+        Route(
+            route_id=1,
+            d_route=None,
+            travels=None,
+            start_time=datetime(2025, 1, 1, 12, 0, 0),
+            end_time=datetime(2025, 1, 3, 12, 0, 0),
+            type="Свои",
+        )
+    ]
     repo = Mock(spec=RouteRepository, autospec=True)
     repo.get_routes_by_user_and_status_and_type = AsyncMock(return_value=routes)
 
@@ -196,12 +262,23 @@ async def test_should_successfull_get_routes_by_user_and_status_and_type() -> No
     result = await service.get_routes_by_user_and_status_and_type(1, "active", "Свои")
 
     assert result == routes
-    repo.get_routes_by_user_and_status_and_type.assert_awaited_once_with(1, "active", "Свои")
+    repo.get_routes_by_user_and_status_and_type.assert_awaited_once_with(
+        1, "active", "Свои"
+    )
 
 
 @pytest.mark.asyncio
 async def test_should_successfull_get_routes_by_type() -> None:
-    routes = [Route(route_id=2, d_route=None, travels=None, start_time=datetime(2025, 1, 1, 12, 0, 0), end_time=datetime(2025, 1, 3, 12, 0, 0), type="Свои")]
+    routes = [
+        Route(
+            route_id=2,
+            d_route=None,
+            travels=None,
+            start_time=datetime(2025, 1, 1, 12, 0, 0),
+            end_time=datetime(2025, 1, 3, 12, 0, 0),
+            type="Свои",
+        )
+    ]
     repo = Mock(spec=RouteRepository, autospec=True)
     repo.get_routes_by_type = AsyncMock(return_value=routes)
 

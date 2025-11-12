@@ -31,7 +31,9 @@ async def test_delete_failure(mock_accommodation_repo: Mock) -> None:
 
 
 @pytest.mark.asyncio
-async def test_should_succesfull_get_existed_accommodation_by_id(mock_accommodation_repo: Mock) -> None:
+async def test_should_succesfull_get_existed_accommodation_by_id(
+    mock_accommodation_repo: Mock,
+) -> None:
     accommodation = Accommodation(
         accommodation_id=1,
         price=20000,
@@ -40,7 +42,7 @@ async def test_should_succesfull_get_existed_accommodation_by_id(mock_accommodat
         type="Отель",
         rating=5,
         check_in=datetime(2023, 10, 10, 10, 0, 0),
-        check_out=datetime(2023, 10, 10, 18, 0, 0)
+        check_out=datetime(2023, 10, 10, 18, 0, 0),
     )
 
     mock_accommodation_repo.get_by_id.return_value = accommodation
@@ -65,10 +67,14 @@ async def test_get_by_id_failure(mock_accommodation_repo: Mock) -> None:
 async def test_get_list_success(mock_accommodation_repo: Mock) -> None:
     accommodations = [
         Accommodation(
-            accommodation_id=1, price=20000, address="Улица Гоголя, 12",
-            name="Four Seasons", type="Отель", rating=5,
+            accommodation_id=1,
+            price=20000,
+            address="Улица Гоголя, 12",
+            name="Four Seasons",
+            type="Отель",
+            rating=5,
             check_in=datetime(2023, 10, 10, 10, 0, 0),
-            check_out=datetime(2023, 10, 10, 18, 0, 0)
+            check_out=datetime(2023, 10, 10, 18, 0, 0),
         )
     ]
     mock_accommodation_repo.get_list.return_value = accommodations
@@ -92,10 +98,14 @@ async def test_get_list_failure(mock_accommodation_repo: Mock) -> None:
 @pytest.mark.asyncio
 async def test_add_success(mock_accommodation_repo: Mock) -> None:
     accommodation = Accommodation(
-        accommodation_id=1, price=20000, address="Улица Гоголя, 12",
-        name="Four Seasons", type="Отель", rating=5,
+        accommodation_id=1,
+        price=20000,
+        address="Улица Гоголя, 12",
+        name="Four Seasons",
+        type="Отель",
+        rating=5,
         check_in=datetime(2023, 10, 10, 10, 0, 0),
-        check_out=datetime(2023, 10, 10, 18, 0, 0)
+        check_out=datetime(2023, 10, 10, 18, 0, 0),
     )
     mock_accommodation_repo.add.return_value = accommodation
     service = AccommodationService(mock_accommodation_repo)
@@ -109,10 +119,14 @@ async def test_add_success(mock_accommodation_repo: Mock) -> None:
 @pytest.mark.asyncio
 async def test_add_failure(mock_accommodation_repo: Mock) -> None:
     accommodation = Accommodation(
-        accommodation_id=1, price=20000, address="Улица Гоголя, 12",
-        name="Four Seasons", type="Отель", rating=5,
+        accommodation_id=1,
+        price=20000,
+        address="Улица Гоголя, 12",
+        name="Four Seasons",
+        type="Отель",
+        rating=5,
         check_in=datetime(2023, 10, 10, 10, 0, 0),
-        check_out=datetime(2023, 10, 10, 18, 0, 0)
+        check_out=datetime(2023, 10, 10, 18, 0, 0),
     )
     mock_accommodation_repo.add.side_effect = ValueError("Duplicate")
     service = AccommodationService(mock_accommodation_repo)
@@ -124,10 +138,14 @@ async def test_add_failure(mock_accommodation_repo: Mock) -> None:
 @pytest.mark.asyncio
 async def test_update_success(mock_accommodation_repo: Mock) -> None:
     accommodation = Accommodation(
-        accommodation_id=1, price=20000, address="Улица Гоголя, 12",
-        name="Four Seasons", type="Отель", rating=5,
+        accommodation_id=1,
+        price=20000,
+        address="Улица Гоголя, 12",
+        name="Four Seasons",
+        type="Отель",
+        rating=5,
         check_in=datetime(2023, 10, 10, 10, 0, 0),
-        check_out=datetime(2023, 10, 10, 18, 0, 0)
+        check_out=datetime(2023, 10, 10, 18, 0, 0),
     )
     service = AccommodationService(mock_accommodation_repo)
     mock_accommodation_repo.update.return_value = accommodation
@@ -141,14 +159,17 @@ async def test_update_success(mock_accommodation_repo: Mock) -> None:
 @pytest.mark.asyncio
 async def test_update_failure(mock_accommodation_repo: Mock) -> None:
     accommodation = Accommodation(
-        accommodation_id=1, price=20000, address="Улица Гоголя, 12",
-        name="Four Seasons", type="Отель", rating=5,
+        accommodation_id=1,
+        price=20000,
+        address="Улица Гоголя, 12",
+        name="Four Seasons",
+        type="Отель",
+        rating=5,
         check_in=datetime(2023, 10, 10, 10, 0, 0),
-        check_out=datetime(2023, 10, 10, 18, 0, 0)
+        check_out=datetime(2023, 10, 10, 18, 0, 0),
     )
     mock_accommodation_repo.update.side_effect = ValueError("Not found")
     service = AccommodationService(mock_accommodation_repo)
 
     with pytest.raises(ValueError):
         await service.update(accommodation)
-

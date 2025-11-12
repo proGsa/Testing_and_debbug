@@ -25,19 +25,29 @@ class AccommodationService(IAccommodationService):
 
     async def add(self, accommodation: Accommodation) -> Accommodation:
         try:
-            logger.debug("Добавления размещения с ID %d", accommodation.accommodation_id)
+            logger.debug(
+                "Добавления размещения с ID %d", accommodation.accommodation_id
+            )
             accommodation = await self.repository.add(accommodation)
-        except (Exception):
-            logger.error("Размещение c таким ID %d уже существует.", accommodation.accommodation_id)
+        except Exception:
+            logger.error(
+                "Размещение c таким ID %d уже существует.",
+                accommodation.accommodation_id,
+            )
             raise ValueError("Размещение c таким ID уже существует.")
         return accommodation
 
     async def update(self, update_accommodation: Accommodation) -> Accommodation:
         try:
-            logger.debug("Обновление размещения с ID %d", update_accommodation.accommodation_id)
+            logger.debug(
+                "Обновление размещения с ID %d", update_accommodation.accommodation_id
+            )
             await self.repository.update(update_accommodation)
-        except (Exception):
-            logger.error("Размещение c таким ID %d не найдено.", update_accommodation.accommodation_id)
+        except Exception:
+            logger.error(
+                "Размещение c таким ID %d не найдено.",
+                update_accommodation.accommodation_id,
+            )
             raise ValueError("Размещение c таким ID не найдено.")
         return update_accommodation
 
@@ -45,8 +55,6 @@ class AccommodationService(IAccommodationService):
         try:
             logger.debug("Размещение с ID %d успешно удалено", accommodation_id)
             await self.repository.delete(accommodation_id)
-        except (Exception):
+        except Exception:
             logger.error("Размещение c таким ID %d не найдено.", accommodation_id)
             raise ValueError("Размещение не найдено.")
-
-

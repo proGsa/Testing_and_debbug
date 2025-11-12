@@ -37,13 +37,15 @@ class EntertainmentRepository(IEntertainmentRepository):
                         address=doc["address"],
                         event_name=doc["event_name"],
                         event_time=doc["event_time"],
-                        city=city
+                        city=city,
                     )
                 )
             logger.debug("Успешно получено %d развлечений", len(entertainments))
             return entertainments
         except PyMongoError as e:
-            logger.error("Ошибка при получении списка развлечений: %s", str(e), exc_info=True)
+            logger.error(
+                "Ошибка при получении списка развлечений: %s", str(e), exc_info=True
+            )
             return []
 
     async def get_by_id(self, entertainment_id: int) -> Entertainment | None:
@@ -51,19 +53,23 @@ class EntertainmentRepository(IEntertainmentRepository):
             doc = await self.entertainments.find_one({"_id": entertainment_id})
             if doc:
                 city = await self.city_repo.get_by_id(doc["city_id"])
-                logger.debug("Найдено развлечение ID %d: %s", entertainment_id, doc["event_name"])
+                logger.debug(
+                    "Найдено развлечение ID %d: %s", entertainment_id, doc["event_name"]
+                )
                 return Entertainment(
                     entertainment_id=int(doc["_id"]),
                     duration=doc["duration"],
                     address=doc["address"],
                     event_name=doc["event_name"],
                     event_time=doc["event_time"],
-                    city=city
+                    city=city,
                 )
             logger.warning("Развлечение с ID %d не найдено", entertainment_id)
             return None
         except PyMongoError as e:
-            logger.error("Ошибка при получении развлечения по ID %d: %s", entertainment_id, e)
+            logger.error(
+                "Ошибка при получении развлечения по ID %d: %s", entertainment_id, e
+            )
             return None
 
     async def add(self, entertainment: Entertainment) -> Entertainment:
@@ -86,21 +92,28 @@ class EntertainmentRepository(IEntertainmentRepository):
                 "address": entertainment.address,
                 "event_name": entertainment.event_name,
                 "event_time": entertainment.event_time,
-                "city_id": city.city_id
+                "city_id": city.city_id,
             }
-            
+
             result = await self.entertainments.insert_one(doc)
             entertainment.entertainment_id = result.inserted_id
-            logger.debug("Развлечение '%s' успешно добавлено с ID %s", 
-                        entertainment.event_name, str(result.inserted_id))
+            logger.debug(
+                "Развлечение '%s' успешно добавлено с ID %s",
+                entertainment.event_name,
+                str(result.inserted_id),
+            )
             return entertainment
-            
+
         except DuplicateKeyError:
             logger.warning("Развлечение с таким ID уже существует")
             return entertainment
         except PyMongoError as e:
-            logger.error("Ошибка при добавлении развлечения '%s': %s", 
-                        entertainment.event_name, str(e), exc_info=True)
+            logger.error(
+                "Ошибка при добавлении развлечения '%s': %s",
+                entertainment.event_name,
+                str(e),
+                exc_info=True,
+            )
             return entertainment
 
     async def update(self, update_entertainment: Entertainment) -> None:
@@ -108,12 +121,14 @@ class EntertainmentRepository(IEntertainmentRepository):
             if not update_entertainment.city:
                 logger.error("Отсутствуют данные о городе")
                 return
-                
+
             city = await self.city_repo.get_by_id(update_entertainment.city.city_id)
             if not city:
-                logger.error("Город '%s' не найден в базе данных", update_entertainment.city)
+                logger.error(
+                    "Город '%s' не найден в базе данных", update_entertainment.city
+                )
                 return
-                
+
             result = await self.entertainments.update_one(
                 {"_id": update_entertainment.entertainment_id},
                 {
@@ -122,28 +137,43 @@ class EntertainmentRepository(IEntertainmentRepository):
                         "address": update_entertainment.address,
                         "event_name": update_entertainment.event_name,
                         "event_time": update_entertainment.event_time,
-                        "city_id": city.city_id
+                        "city_id": city.city_id,
                     }
-                }
+                },
             )
-            
+
             if result.modified_count == 0:
-                logger.warning("Развлечение с ID %d не найдено для обновления", 
-                             update_entertainment.entertainment_id)
+                logger.warning(
+                    "Развлечение с ID %d не найдено для обновления",
+                    update_entertainment.entertainment_id,
+                )
             else:
-                logger.debug("Развлечение ID %d успешно обновлено", 
-                           update_entertainment.entertainment_id)
-                
+                logger.debug(
+                    "Развлечение ID %d успешно обновлено",
+                    update_entertainment.entertainment_id,
+                )
+
         except PyMongoError as e:
-            logger.error("Ошибка при обновлении развлечения ID %d: %s", 
-                       update_entertainment.entertainment_id, str(e), exc_info=True)
+            logger.error(
+                "Ошибка при обновлении развлечения ID %d: %s",
+                update_entertainment.entertainment_id,
+                str(e),
+                exc_info=True,
+            )
 
     async def delete(self, entertainment_id: int) -> None:
         try:
             result = await self.entertainments.delete_one({"_id": entertainment_id})
             if result.deleted_count == 0:
-                logger.warning("Развлечение с ID %d не найдено для удаления", entertainment_id)
+                logger.warning(
+                    "Развлечение с ID %d не найдено для удаления", entertainment_id
+                )
             else:
                 logger.debug("Развлечение ID %d успешно удалено", entertainment_id)
         except PyMongoError as e:
-            logger.error("Ошибка при удалении развлечения ID %d: %s", entertainment_id, str(e), exc_info=True)
+            logger.error(
+                "Ошибка при удалении развлечения ID %d: %s",
+                entertainment_id,
+                str(e),
+                exc_info=True,
+            )

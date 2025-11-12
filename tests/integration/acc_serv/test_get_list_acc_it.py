@@ -9,9 +9,11 @@ TWO = 2
 
 
 @pytest.mark.asyncio
-async def test_get_all_accommodations_success(accommodation_service: AccommodationService) -> None:
+async def test_get_all_accommodations_success(
+    accommodation_service: AccommodationService,
+) -> None:
     accommodations = await accommodation_service.get_list()
-    
+
     assert len(accommodations) == TWO
     names = [acc.name for acc in accommodations]
     assert "ABC" in names

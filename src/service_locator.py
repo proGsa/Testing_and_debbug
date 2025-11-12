@@ -33,12 +33,20 @@ from repository.entertainment_repository import EntertainmentRepository
 from repository.route_repository import RouteRepository
 from repository.travel_repository import TravelRepository
 from repository.user_repository import UserRepository
-from repository_mongodb.accommodation_repository import AccommodationRepository as MongoAccommodationRepository
+from repository_mongodb.accommodation_repository import (
+    AccommodationRepository as MongoAccommodationRepository,
+)
 from repository_mongodb.city_repository import CityRepository as MongoCityRepository
-from repository_mongodb.directory_route_repository import DirectoryRouteRepository as MongoDirectoryRouteRepository
-from repository_mongodb.entertainment_repository import EntertainmentRepository as MongoEntertainmentRepository
+from repository_mongodb.directory_route_repository import (
+    DirectoryRouteRepository as MongoDirectoryRouteRepository,
+)
+from repository_mongodb.entertainment_repository import (
+    EntertainmentRepository as MongoEntertainmentRepository,
+)
 from repository_mongodb.route_repository import RouteRepository as MongoRouteRepository
-from repository_mongodb.travel_repository import TravelRepository as MongoTravelRepository
+from repository_mongodb.travel_repository import (
+    TravelRepository as MongoTravelRepository,
+)
 from repository_mongodb.user_repository import UserRepository as MongoUserRepository
 from services.accommodation_service import AccommodationService
 from services.city_service import CityService
@@ -60,15 +68,15 @@ _async_session_maker = None
 @dataclass
 class Repositories:
     def __init__(
-            self,
-            acc_repo: IAccommodationRepository,
-            city_repo: ICityRepository,
-            d_route_repo: IDirectoryRouteRepository,
-            ent_repo: IEntertainmentRepository,
-            route_repo: IRouteRepository,
-            travel_repo: ITravelRepository,
-            user_repo: IUserRepository
-        ):
+        self,
+        acc_repo: IAccommodationRepository,
+        city_repo: ICityRepository,
+        d_route_repo: IDirectoryRouteRepository,
+        ent_repo: IEntertainmentRepository,
+        route_repo: IRouteRepository,
+        travel_repo: ITravelRepository,
+        user_repo: IUserRepository,
+    ):
         self.acc_repo = acc_repo
         self.city_repo = city_repo
         self.d_route_repo = d_route_repo
@@ -76,13 +84,21 @@ class Repositories:
         self.route_repo = route_repo
         self.travel_repo = travel_repo
         self.user_repo = user_repo
-        
+
 
 @dataclass
 class Services:
-    def __init__(self, acc_serv: AccommodationService, city_serv: CityService, 
-            d_route_serv: DirectoryRouteService, ent_serv: EntertainmentService, 
-            route_serv: RouteService, travel_serv: TravelService, user_serv: UserService, auth_serv: AuthService):
+    def __init__(
+        self,
+        acc_serv: AccommodationService,
+        city_serv: CityService,
+        d_route_serv: DirectoryRouteService,
+        ent_serv: EntertainmentService,
+        route_serv: RouteService,
+        travel_serv: TravelService,
+        user_serv: UserService,
+        auth_serv: AuthService,
+    ):
         self.acc_serv = acc_serv
         self.city_serv = city_serv
         self.d_route_serv = d_route_serv
@@ -95,9 +111,16 @@ class Services:
 
 @dataclass
 class Controllers:
-    def __init__(self, acc_contr: AccommodationController, route_contr: RouteController, 
-            ent_contr: EntertainmentController, travel_contr: TravelController, user_contr: UserController, 
-            d_route_contr: DirectoryRouteController, city_contr: CityController):
+    def __init__(
+        self,
+        acc_contr: AccommodationController,
+        route_contr: RouteController,
+        ent_contr: EntertainmentController,
+        travel_contr: TravelController,
+        user_contr: UserController,
+        d_route_contr: DirectoryRouteController,
+        city_contr: CityController,
+    ):
         self.acc_contr = acc_contr
         self.city_contr = city_contr
         self.route_contr = route_contr
@@ -108,7 +131,9 @@ class Controllers:
 
 
 class ServiceLocator:
-    def __init__(self, repositories: Repositories, services: Services, controllers: Controllers):
+    def __init__(
+        self, repositories: Repositories, services: Services, controllers: Controllers
+    ):
         self.repositories = repositories
         self.services = services
         self.controllers = controllers
@@ -166,7 +191,7 @@ class ServiceLocator:
 
     def get_route_contr(self) -> RouteController:
         return self.controllers.route_contr
-    
+
     def get_d_route_contr(self) -> DirectoryRouteController:
         return self.controllers.d_route_contr
 
@@ -180,49 +205,62 @@ class ServiceLocator:
         return self.controllers.user_contr
 
 
-async def get_sessionmaker(max_retries: int = 5, delay: int = 2) -> Any: 
+async def get_sessionmaker(max_retries: int = 5, delay: int = 2) -> Any:
     global _async_session_maker
     if _async_session_maker is not None:
         return _async_session_maker
     engine = create_async_engine(
         settings.DATABASE_URL_ASYNC,
-        connect_args={
-            "server_settings": {
-                "search_path": "travel_db" 
-            }
-        },
+        connect_args={"server_settings": {"search_path": "travel_db"}},
         echo=True,
-        pool_pre_ping=True
-    )   
+        pool_pre_ping=True,
+    )
     for attempt in range(max_retries):
         try:
-            return sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+            _async_session_maker = sessionmaker(
+                engine,
+                class_=AsyncSession,
+                expire_on_commit=False,
+            )  # type: ignore[call-overload]
+            return _async_session_maker
         except OperationalError as e:
             logger.error(f"Ошибка подключения к БД: {e}")
             if attempt < max_retries - 1:
                 logger.info(f"Повторная попытка подключения через {delay} секунд...")
                 await asyncio.sleep(delay)
             else:
-                raise RuntimeError("Не удалось подключиться к базе данных после нескольких попыток.")
+                raise RuntimeError(
+                    "Не удалось подключиться к базе данных после нескольких попыток."
+                )
     return None
 
 
 async def get_service_locator() -> ServiceLocator:
     global _mongo_client, _async_session_maker
-    
+
     db_type = "mongo" if "mongo" in settings.DATABASE_URL_ASYNC else "postgres"
-    
+
     if db_type == "mongo":
         if _mongo_client is None:
             _mongo_client = AsyncIOMotorClient(settings.DATABASE_URL_ASYNC)
         mongo_client: AsyncIOMotorClient[Any] = _mongo_client
         m_city_repo: ICityRepository = MongoCityRepository(mongo_client)
-        m_d_route_repo: IDirectoryRouteRepository = MongoDirectoryRouteRepository(mongo_client, m_city_repo)
-        m_acc_repo: IAccommodationRepository = MongoAccommodationRepository(mongo_client, m_city_repo)
-        m_ent_repo: IEntertainmentRepository = MongoEntertainmentRepository(mongo_client, m_city_repo)
+        m_d_route_repo: IDirectoryRouteRepository = MongoDirectoryRouteRepository(
+            mongo_client, m_city_repo
+        )
+        m_acc_repo: IAccommodationRepository = MongoAccommodationRepository(
+            mongo_client, m_city_repo
+        )
+        m_ent_repo: IEntertainmentRepository = MongoEntertainmentRepository(
+            mongo_client, m_city_repo
+        )
         m_user_repo: IUserRepository = MongoUserRepository(mongo_client)
-        m_travel_repo: ITravelRepository = MongoTravelRepository(mongo_client, m_user_repo, m_ent_repo, m_acc_repo)
-        m_route_repo: IRouteRepository = MongoRouteRepository(mongo_client, m_d_route_repo, m_travel_repo)
+        m_travel_repo: ITravelRepository = MongoTravelRepository(
+            mongo_client, m_user_repo, m_ent_repo, m_acc_repo
+        )
+        m_route_repo: IRouteRepository = MongoRouteRepository(
+            mongo_client, m_d_route_repo, m_travel_repo
+        )
 
         acc_serv = AccommodationService(m_acc_repo)
         city_serv = CityService(m_city_repo)
@@ -233,21 +271,47 @@ async def get_service_locator() -> ServiceLocator:
         user_serv = UserService(m_user_repo)
         auth_serv = AuthService(m_user_repo)
 
-        repositories = Repositories(m_acc_repo, m_city_repo, m_d_route_repo, m_ent_repo, m_route_repo, m_travel_repo, m_user_repo)
+        repositories = Repositories(
+            m_acc_repo,
+            m_city_repo,
+            m_d_route_repo,
+            m_ent_repo,
+            m_route_repo,
+            m_travel_repo,
+            m_user_repo,
+        )
     else:
         if _async_session_maker is None:
             _async_session_maker = await get_sessionmaker()
         async with _async_session_maker() as session:
             city_repo: ICityRepository = CityRepository(session)
-            d_route_repo: IDirectoryRouteRepository = DirectoryRouteRepository(session, city_repo)
-            acc_repo: IAccommodationRepository = AccommodationRepository(session, city_repo)
-            ent_repo: IEntertainmentRepository = EntertainmentRepository(session, city_repo)
+            d_route_repo: IDirectoryRouteRepository = DirectoryRouteRepository(
+                session, city_repo
+            )
+            acc_repo: IAccommodationRepository = AccommodationRepository(
+                session, city_repo
+            )
+            ent_repo: IEntertainmentRepository = EntertainmentRepository(
+                session, city_repo
+            )
             user_repo: IUserRepository = UserRepository(session)
-            travel_repo: ITravelRepository = TravelRepository(session, user_repo, ent_repo, acc_repo)
-            route_repo: IRouteRepository = RouteRepository(session, d_route_repo, travel_repo)
+            travel_repo: ITravelRepository = TravelRepository(
+                session, user_repo, ent_repo, acc_repo
+            )
+            route_repo: IRouteRepository = RouteRepository(
+                session, d_route_repo, travel_repo
+            )
 
-            repositories = Repositories(acc_repo, city_repo, d_route_repo, ent_repo, route_repo, travel_repo, user_repo)
-        
+            repositories = Repositories(
+                acc_repo,
+                city_repo,
+                d_route_repo,
+                ent_repo,
+                route_repo,
+                travel_repo,
+                user_repo,
+            )
+
         acc_serv = AccommodationService(acc_repo)
         city_serv = CityService(city_repo)
         d_route_serv = DirectoryRouteService(d_route_repo)
@@ -256,17 +320,35 @@ async def get_service_locator() -> ServiceLocator:
         travel_serv = TravelService(travel_repo)
         user_serv = UserService(user_repo)
         auth_serv = AuthService(user_repo)
-    
+
     city_contr = CityController(city_serv)
-    route_contr = RouteController(route_serv, travel_serv, d_route_serv, user_serv, ent_serv, acc_serv) 
+    route_contr = RouteController(
+        route_serv, travel_serv, d_route_serv, user_serv, ent_serv, acc_serv
+    )
     d_route_contr = DirectoryRouteController(d_route_serv, city_serv)
     acc_contr = AccommodationController(acc_serv, city_serv)
     ent_contr = EntertainmentController(ent_serv, city_serv)
     travel_contr = TravelController(travel_serv, user_serv, ent_serv, acc_serv)
     user_contr = UserController(user_serv, auth_serv)
 
-    services = Services(acc_serv, city_serv, d_route_serv, ent_serv, route_serv, travel_serv, user_serv, auth_serv)
-    controllers = Controllers(acc_contr, route_contr, ent_contr, travel_contr, user_contr, 
-                                                                                d_route_contr, city_contr)
-    
+    services = Services(
+        acc_serv,
+        city_serv,
+        d_route_serv,
+        ent_serv,
+        route_serv,
+        travel_serv,
+        user_serv,
+        auth_serv,
+    )
+    controllers = Controllers(
+        acc_contr,
+        route_contr,
+        ent_contr,
+        travel_contr,
+        user_contr,
+        d_route_contr,
+        city_contr,
+    )
+
     return ServiceLocator(repositories, services, controllers)

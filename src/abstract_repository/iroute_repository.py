@@ -27,7 +27,7 @@ class IRouteRepository(ABC):
     @abstractmethod
     async def delete(self, route_id: int) -> None:
         pass
-    
+
     @abstractmethod
     async def get_routes_by_travel_id_ordered(self, travel_id: int) -> list[Route]:
         pass
@@ -41,17 +41,23 @@ class IRouteRepository(ABC):
         pass
 
     @abstractmethod
-    async def change_transport(self, d_route_id: int, route_id: int, new_transport: str) -> Route | None:
+    async def change_transport(
+        self, d_route_id: int, route_id: int, new_transport: str
+    ) -> Route | None:
         pass
 
     @abstractmethod
-    async def insert_city_after(self, travel_id: int, new_city_id: int, after_city_id: int, transport: str) -> None:
+    async def insert_city_after(
+        self, travel_id: int, new_city_id: int, after_city_id: int, transport: str
+    ) -> None:
         pass
 
     @abstractmethod
-    async def get_routes_by_user_and_status_and_type(self, user_id: int, status: str, type_route: str) -> list[Route]:
+    async def get_routes_by_user_and_status_and_type(
+        self, user_id: int, status: str, type_route: str
+    ) -> list[Route]:
         pass
-    
+
     @abstractmethod
     async def get_routes_by_type(self, type_route: str) -> list[Route]:
         pass

@@ -34,13 +34,13 @@ class UserService(IUserService):
     def __init__(self, repository: IUserRepository) -> None:
         self.repository = repository
         logger.debug("UserService инициализирован")
-        reset_tokens: ClassVar[dict[str, str]] = {}
+        self.reset_tokens: dict[str, str] = {}
 
     async def add(self, user: User) -> User:
         try:
             logger.debug("Добавление администратора с логином %s", user)
             user = await self.repository.add(user)
-        except (Exception):
+        except Exception:
             logger.error("Администратора с логином %s уже существует.", user.login)
             raise ValueError("Администратор c таким ID уже существует.")
         return user
@@ -57,7 +57,7 @@ class UserService(IUserService):
         try:
             logger.debug("Обновление пользователя с ID %d", updated_user.user_id)
             await self.repository.update(updated_user)
-        except (Exception):
+        except Exception:
             logger.error("Пользователь с ID %d не найден.", updated_user.user_id)
             raise ValueError("Пользователь не найден.")
         return updated_user
@@ -66,7 +66,7 @@ class UserService(IUserService):
         try:
             logger.debug("Удаление пользователя с ID %d", user_id)
             await self.repository.delete(user_id)
-        except (Exception):
+        except Exception:
             logger.error("Пользователь с ID %d не найден.", user_id)
             raise ValueError("Пользователь не найден.")
 
@@ -83,10 +83,11 @@ class UserService(IUserService):
         user.password = new_password
         await self.repository.update(user)
 
+
 class AuthService(IAuthService):
     failed_attempts: ClassVar[dict[str, list[float]]] = {}
     blocked_users: ClassVar[dict[str, float]] = {}
-    two_fa_storage: ClassVar[dict[str, float]] = {}
+    two_fa_storage: ClassVar[dict[str, dict[str, float | str]]] = {}
     MAX_2FA_ATTEMPTS: ClassVar[int] = 5
     BLOCK_2FA_TIME: ClassVar[int] = 60
 
@@ -98,7 +99,7 @@ class AuthService(IAuthService):
         code = "".join(random.choices(string.digits, k=6))
         self.two_fa_storage[login] = {
             "code": code,
-            "expires": time.time() + 300  # 5 минут
+            "expires": time.time() + 300,  # 5 минут
         }
         return code
 
@@ -106,7 +107,7 @@ class AuthService(IAuthService):
         data = self.two_fa_storage.get(login)
         if not data:
             return False
-        if data["expires"] < time.time():
+        if float(data["expires"]) < time.time():
             del self.two_fa_storage[login]
             return False
         if data["code"] != code:
@@ -116,14 +117,14 @@ class AuthService(IAuthService):
 
     async def registrate(self, user: User) -> User:
         user.password = self.get_password_hash(user.password)
-        
+
         logger.debug("Регистрация пользователя с логином %s", user)
         try:
             await self.repository.add(user)
         except Exception as e:
             logger.error("Ошибка регистрации пользователя %s: %s", user.login, str(e))
             raise ValueError("Пользователь с таким логином уже существует")
-        
+
         return user
 
     async def authenticate(self, login: str, password: str) -> User | None:
@@ -169,32 +170,36 @@ class AuthService(IAuthService):
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str | bytes) -> bool:
         try:
-            plain_bytes = plain_password.encode('utf-8')
-            hash_bytes = hashed_password.encode('utf-8') if isinstance(hashed_password, str) else hashed_password
+            plain_bytes = plain_password.encode("utf-8")
+            hash_bytes = (
+                hashed_password.encode("utf-8")
+                if isinstance(hashed_password, str)
+                else hashed_password
+            )
             return bcrypt.checkpw(plain_bytes, hash_bytes)
         except Exception as e:
             logger.error(f"Password verification failed: {e!s}")
             return False
-    
+
     @staticmethod
     def create_access_token(user: User) -> str:
         expires_delta = timedelta(minutes=session_timeout)
         expire = datetime.utcnow() + expires_delta
-        
+
         to_encode = {
             "sub": str(user.user_id),
             "login": user.login,
             "is_admin": user.is_admin,
-            "exp": expire
+            "exp": expire,
         }
-        return jwt.encode(to_encode, secret_key, algorithm=algorithm)
-    
+        return str(jwt.encode(to_encode, secret_key, algorithm=algorithm))
+
     @staticmethod
     def get_password_hash(password: str) -> str:
         salt = bcrypt.gensalt()
-        hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
-        return hashed_password.decode('utf-8')
-    
+        hashed_password = bcrypt.hashpw(password.encode("utf-8"), salt)
+        return hashed_password.decode("utf-8")
+
     @staticmethod
-    def decode_token(token: str) -> dict[str, Any]:
+    def decode_token(token: str) -> Any:
         return jwt.decode(token, secret_key, algorithms=[algorithm])

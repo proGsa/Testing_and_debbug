@@ -36,24 +36,29 @@ class AccommodationRepository(IAccommodationRepository):
                     rating=row["rating"],
                     check_in=row["check_in"],
                     check_out=row["check_out"],
-                    city=await self.city_repo.get_by_id(row["city"])
+                    city=await self.city_repo.get_by_id(row["city"]),
                 )
-                
                 for row in rows
             ]
             logger.debug("Успешно получено %d размещений", len(accommodations))
             return accommodations
         except SQLAlchemyError as e:
-            logger.error("Ошибка при получении списка размещений: %s", str(e), exc_info=True)
+            logger.error(
+                "Ошибка при получении списка размещений: %s", str(e), exc_info=True
+            )
             raise
 
     async def get_by_id(self, accommodation_id: int) -> Accommodation | None:
         query = text("SELECT * FROM accommodations WHERE id = :accommodation_id")
         try:
-            result = await self.session.execute(query, {"accommodation_id": accommodation_id})
+            result = await self.session.execute(
+                query, {"accommodation_id": accommodation_id}
+            )
             row = result.mappings().first()
             if row:
-                logger.debug("Найдено размещение ID %d: %s", accommodation_id, row["name"])
+                logger.debug(
+                    "Найдено размещение ID %d: %s", accommodation_id, row["name"]
+                )
                 return Accommodation(
                     accommodation_id=row["id"],
                     price=row["price"],
@@ -63,44 +68,63 @@ class AccommodationRepository(IAccommodationRepository):
                     rating=row["rating"],
                     check_in=row["check_in"],
                     check_out=row["check_out"],
-                    city=await self.city_repo.get_by_id(row["city"])
+                    city=await self.city_repo.get_by_id(row["city"]),
                 )
             logger.warning("Размещение с ID %d не найдено", accommodation_id)
             return None
         except SQLAlchemyError as e:
-            logger.error("Ошибка при получении размещения по ID %d: %s", accommodation_id, str(e), exc_info=True)
+            logger.error(
+                "Ошибка при получении размещения по ID %d: %s",
+                accommodation_id,
+                str(e),
+                exc_info=True,
+            )
             return None
 
     async def add(self, accommodation: Accommodation) -> Accommodation:
-        query = text("""
+        query = text(
+            """
             INSERT INTO accommodations (price, address, name, type, rating, check_in, check_out, city)
             VALUES (:price, :address, :name, :type, :rating, :check_in, :check_out, :city)
             RETURNING id
-        """)
+        """
+        )
         try:
             if accommodation.city is None:
                 logger.error("Отсутствуют данные о городе")
-                raise ValueError("Невозможно добавить размещение: отсутствуют данные о городе")
-            row = await self.session.execute(query, {
-                "price": accommodation.price,
-                "address": accommodation.address,
-                "name": accommodation.name,
-                "type": accommodation.type,
-                "rating": accommodation.rating,
-                "check_in": accommodation.check_in,
-                "check_out": accommodation.check_out,
-                "city": accommodation.city.city_id
-            })
+                raise ValueError(
+                    "Невозможно добавить размещение: отсутствуют данные о городе"
+                )
+            row = await self.session.execute(
+                query,
+                {
+                    "price": accommodation.price,
+                    "address": accommodation.address,
+                    "name": accommodation.name,
+                    "type": accommodation.type,
+                    "rating": accommodation.rating,
+                    "check_in": accommodation.check_in,
+                    "check_out": accommodation.check_out,
+                    "city": accommodation.city.city_id,
+                },
+            )
             new_id = row.scalar_one()
             await self.session.commit()
             logger.debug("Размещение '%s' успешно добавлено", accommodation.name)
             accommodation.accommodation_id = new_id
         except IntegrityError:
-            logger.warning("Размещение '%s' уже существует в базе данных", accommodation.name)
+            logger.warning(
+                "Размещение '%s' уже существует в базе данных", accommodation.name
+            )
             await self.session.rollback()
             raise ValueError("Размещение с такими данными уже существует")
         except SQLAlchemyError as e:
-            logger.error("Ошибка при добавлении размещения '%s': %s", accommodation.name, str(e), exc_info=True)
+            logger.error(
+                "Ошибка при добавлении размещения '%s': %s",
+                accommodation.name,
+                str(e),
+                exc_info=True,
+            )
             await self.session.rollback()
             raise
         return accommodation
@@ -109,7 +133,8 @@ class AccommodationRepository(IAccommodationRepository):
         if update_accommodation.city is None:
             logger.error("Отсутствуют данные о городе")
             return
-        query = text("""
+        query = text(
+            """
             UPDATE accommodations
             SET price = :price,
                 address = :address,
@@ -120,9 +145,12 @@ class AccommodationRepository(IAccommodationRepository):
                 check_out = :check_out,
                 city = :city
             WHERE id = :accommodation_id
-        """)
+        """
+        )
         try:
-            await self.session.execute(query, {
+            await self.session.execute(
+                query,
+                {
                     "price": update_accommodation.price,
                     "address": update_accommodation.address,
                     "name": update_accommodation.name,
@@ -131,15 +159,23 @@ class AccommodationRepository(IAccommodationRepository):
                     "check_in": update_accommodation.check_in,
                     "check_out": update_accommodation.check_out,
                     "city": update_accommodation.city.city_id,
-                    "accommodation_id": update_accommodation.accommodation_id
-                })
-            logger.debug("Размещение ID %d успешно обновлено", update_accommodation.accommodation_id)
+                    "accommodation_id": update_accommodation.accommodation_id,
+                },
+            )
+            logger.debug(
+                "Размещение ID %d успешно обновлено",
+                update_accommodation.accommodation_id,
+            )
             await self.session.commit()
         except SQLAlchemyError as e:
-            logger.error("Ошибка при обновлении размещения ID %d: %s", 
-                        update_accommodation.accommodation_id, str(e), exc_info=True)
+            logger.error(
+                "Ошибка при обновлении размещения ID %d: %s",
+                update_accommodation.accommodation_id,
+                str(e),
+                exc_info=True,
+            )
             await self.session.rollback()
-            
+
     async def delete(self, accommodation_id: int) -> None:
         query = text("DELETE FROM accommodations WHERE id = :accommodation_id")
         try:
@@ -147,7 +183,9 @@ class AccommodationRepository(IAccommodationRepository):
             await self.session.commit()
             logger.debug("Размещение ID %d успешно удалено", accommodation_id)
         except SQLAlchemyError as e:
-            logger.error("Ошибка при удалении размещения ID %d: %s", accommodation_id, str(e), exc_info=True)
-    
-
-
+            logger.error(
+                "Ошибка при удалении размещения ID %d: %s",
+                accommodation_id,
+                str(e),
+                exc_info=True,
+            )

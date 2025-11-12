@@ -18,7 +18,7 @@ class IUserService(ABC):
     @abstractmethod
     async def delete(self, user_id: int) -> None:
         pass
-        
+
 
 class IAuthService(ABC):
     @abstractmethod

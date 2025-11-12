@@ -13,7 +13,7 @@ class IRouteService(ABC):
     @abstractmethod
     async def get_by_id(self, route_id: int) -> Route | None:
         pass
-    
+
     @abstractmethod
     async def get_all_routes(self) -> list[Route]:
         pass
@@ -29,5 +29,3 @@ class IRouteService(ABC):
     @abstractmethod
     async def delete(self, route_id: int) -> None:
         pass
-
-

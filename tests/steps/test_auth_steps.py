@@ -8,12 +8,13 @@ from models.user import User
 from faker import Faker
 import os
 
-fake = Faker('ru_RU')
+fake = Faker("ru_RU")
 
 scenarios("../features/authentication.feature")
 
 BDD_PASS = os.environ.get("BDD_USER_PASS")
 # BDD_PASS = "Test123!"
+
 
 # ------------------------------
 # Синхронная фикстура для тестового пользователя
@@ -33,7 +34,7 @@ def test_user_2fa():
         "email": email,
         "login": login,
         "password": password,
-        "is_admin": False
+        "is_admin": False,
     }
 
     # Регистрация пользователя
@@ -53,8 +54,9 @@ def test_user_2fa():
     # Удаляем пользователя после теста
     requests.delete(
         f"http://localhost:8000/api/delete/{data['user_id']}",
-        headers={"Authorization": f"Bearer {data['access_token']}"}
+        headers={"Authorization": f"Bearer {data['access_token']}"},
     )
+
 
 # ------------------------------
 # Шаги BDD (синхронные)
@@ -63,14 +65,18 @@ def test_user_2fa():
 def given_user(test_user_2fa):
     return test_user_2fa
 
+
 @when("пользователь выполняет первичный вход")
 def when_login(test_user_2fa):
     login = test_user_2fa["login"]
     password = test_user_2fa["password"]
 
-    resp = requests.post("http://localhost:8000/api/login1", json={"login": login, "password": password})
+    resp = requests.post(
+        "http://localhost:8000/api/login1", json={"login": login, "password": password}
+    )
     assert resp.status_code == 200
     test_user_2fa["login_resp"] = resp
+
 
 @then("на почту отправлен код 2FA")
 def then_email_code(test_user_2fa):
@@ -94,14 +100,16 @@ def then_email_code(test_user_2fa):
     test_user_2fa["2fa_code"] = code
 
 
-
 @when("пользователь вводит правильный код")
 def when_enter_code(test_user_2fa):
     login = test_user_2fa["login"]
     code = test_user_2fa["2fa_code"]
 
-    resp = requests.post("http://localhost:8000/api/login2", json={"login": login, "code": code})
+    resp = requests.post(
+        "http://localhost:8000/api/login2", json={"login": login, "code": code}
+    )
     test_user_2fa["2fa_resp"] = resp
+
 
 @then("система выдает действительный access_token")
 def then_access_token(test_user_2fa):

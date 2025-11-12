@@ -34,7 +34,7 @@ class ITravelRepository(ABC):
     @abstractmethod
     async def get_accommodations_by_travel(self, travel_id: int) -> list[Accommodation]:
         pass
-    
+
     @abstractmethod
     async def get_users_by_travel(self, travel_id: int) -> list[User]:
         pass
@@ -46,9 +46,9 @@ class ITravelRepository(ABC):
     @abstractmethod
     async def get_travel_by_route_id(self, route_id: int) -> Travel | None:
         pass
-    
+
     @abstractmethod
-    async def search(self, travel_dict: dict[str, Any]) -> list[Travel]:  
+    async def search(self, travel_dict: dict[str, Any]) -> list[Travel]:
         pass
 
     @abstractmethod
@@ -56,11 +56,15 @@ class ITravelRepository(ABC):
         pass
 
     @abstractmethod
-    async def link_entertainments(self, travel_id: int, entertainment_ids: list[int]) -> None:
+    async def link_entertainments(
+        self, travel_id: int, entertainment_ids: list[int]
+    ) -> None:
         pass
 
     @abstractmethod
-    async def link_accommodations(self, travel_id: int, accommodation_ids: list[int]) -> None:
+    async def link_accommodations(
+        self, travel_id: int, accommodation_ids: list[int]
+    ) -> None:
         pass
 
     @abstractmethod

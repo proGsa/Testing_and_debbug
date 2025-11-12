@@ -22,4 +22,3 @@ class IDirectoryRouteService(ABC):
     @abstractmethod
     async def delete(self, d_route_id: int) -> None:
         pass
-

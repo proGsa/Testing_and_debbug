@@ -16,13 +16,15 @@ pytestmark = pytest.mark.unit
 
 
 @pytest.mark.asyncio
-async def test_service_should_successfull_delete_existed_city(mock_city_repo: Mock) -> None:
+async def test_service_should_successfull_delete_existed_city(
+    mock_city_repo: Mock,
+) -> None:
     # Arrange
     city_service = CityService(mock_city_repo)
-    
+
     # Act
     await city_service.delete(123)
-    
+
     # Assert
     mock_city_repo.delete.assert_called_once_with(123)
 
@@ -40,10 +42,7 @@ async def test_service_should_throw_exception_at_delete_not_existed_city() -> No
 
 @pytest.mark.asyncio
 async def test_should_succesfull_get_cities() -> None:
-    cities = [
-        City(city_id=1, name="Москва"),
-        City(city_id=2, name="Казань")
-    ]
+    cities = [City(city_id=1, name="Москва"), City(city_id=2, name="Казань")]
     repository = Mock(spec=CityRepository)
     repository.get_list = AsyncMock(return_value=cities)
 
