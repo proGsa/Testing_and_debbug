@@ -221,7 +221,7 @@ async def get_sessionmaker(max_retries: int = 5, delay: int = 2) -> Any:
                 engine,
                 class_=AsyncSession,
                 expire_on_commit=False,
-            )  # type: ignore[call-overload]
+            )  # type: ignore
             return _async_session_maker
         except OperationalError as e:
             logger.error(f"Ошибка подключения к БД: {e}")

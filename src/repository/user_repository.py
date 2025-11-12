@@ -6,7 +6,6 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.engine import RowMapping
 
 from abstract_repository.iuser_repository import IUserRepository
 from models.user import User
@@ -85,7 +84,7 @@ class UserRepository(IUserRepository):
         query = text("SELECT * FROM users WHERE id = :user_id")
         try:
             result = await self.session.execute(query, {"user_id": user_id})
-            row: RowMapping | None = result.mappings().first()
+            row = result.mappings().first()
             if row:
                 logger.debug(f"Пользователь найден по ID {user_id}")
                 return User(
@@ -109,7 +108,7 @@ class UserRepository(IUserRepository):
         query = text("SELECT * FROM users WHERE login = :login")
         try:
             result = await self.session.execute(query, {"login": login})
-            row: RowMapping | None = result.mappings().first()
+            row = result.mappings().first()
             if not row:
                 logger.debug(f"Пользователь с логином {login} не найден")
                 return None
