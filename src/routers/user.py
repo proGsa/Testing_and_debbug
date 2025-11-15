@@ -5,7 +5,6 @@ import time
 
 from email.message import EmailMessage
 from typing import Any
-from typing import Annotated
 
 import aiosmtplib
 
@@ -13,6 +12,7 @@ from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import HTTPException
 from fastapi import Request
+from fastapi.responses import Response
 from fastapi.responses import HTMLResponse
 from fastapi.responses import JSONResponse
 from fastapi.responses import RedirectResponse
@@ -100,7 +100,7 @@ async def login_user(
 @user_router.post("/api/login1")
 async def login1_user(
     request: Request, service_locator: ServiceLocator = get_sl_dep
-) -> Annotated[JSONResponse, "FastAPI JSON Response"]:
+) -> Response:
     data = await request.json()
     login = data.get("login")
     password = data.get("password")
