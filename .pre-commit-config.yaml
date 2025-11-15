@@ -1,26 +1,25 @@
 repos:
-  # Black — автоформатирование кода
   - repo: https://github.com/psf/black
     rev: 24.8.0
     hooks:
       - id: black
 
-  # Flake8 — линтер
   - repo: https://github.com/pycqa/flake8
     rev: 7.1.1
     hooks:
       - id: flake8
         files: ^src/
 
-  # Mypy — проверка типов
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.11.2
     hooks:
       - id: mypy
         language: system
         files: ^src/
+        args:
+          - --strict
+          - --disallow-any-expr
 
-  # Radon — проверка цикломатической сложности
   - repo: local
     hooks:
       - id: radon-complexity
