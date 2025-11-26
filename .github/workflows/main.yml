@@ -337,7 +337,7 @@ jobs:
           docker --version
           docker compose version
 
-      - name: Check files before Docker build
+      - name: Check files before benchmark
         run: |
           echo "Listing current directory:"
           ls -la
@@ -353,34 +353,37 @@ jobs:
           else
             echo "poetry.lock NOT FOUND ❌"
           fi
-          
+
+      - name: Prepare results directory
+        run: |
+          mkdir -p $GITHUB_WORKSPACE/results
+          mkdir -p $GITHUB_WORKSPACE/allure-results/benchmark
+
       - name: Run benchmark script
         run: |
           chmod +x benchmark/run_benchmark.sh
           chmod +x benchmark/collect_stats.sh
-          mkdir -p results
           ./benchmark/run_benchmark.sh
 
       - name: Upload benchmark CSV results
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-metrics
-          path: results/*.csv
+          path: $GITHUB_WORKSPACE/results/*.csv
 
       - name: Convert CSV to Allure attachments
         run: |
-          mkdir -p allure-results/benchmark
-          for f in results/*.csv; do
+          for f in $GITHUB_WORKSPACE/results/*.csv; do
             name=$(basename "$f")
             echo "Attaching $name to Allure"
-            cat "$f" > "allure-results/benchmark/${name}.txt"
+            cat "$f" > "$GITHUB_WORKSPACE/allure-results/benchmark/${name}.txt"
           done
 
       - name: Upload benchmark Allure files
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-allure
-          path: allure-results/benchmark
+          path: $GITHUB_WORKSPACE/allure-results/benchmark
 
 
   # allure-report:
@@ -463,7 +466,7 @@ jobs:
 
 
 
-  
+
   # test-metrics:
   #   runs-on: ubuntu-latest
   #   needs: [unit-tests, integration-tests, e2e-tests]
