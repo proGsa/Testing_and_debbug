@@ -103,19 +103,10 @@ RUN apt-get update && apt-get install -y \
     docker.io \
     && rm -rf /var/lib/apt/lists/*
 
-# ------------------------
-# Установка Poetry
-# ------------------------
 RUN pip install --no-cache-dir poetry
 
-# ------------------------
-# Копируем только зависимости
-# ------------------------
-COPY pyproject.toml poetry.lock /app/
+COPY pyproject.toml /app/
 
-# ------------------------
-# Установка зависимостей без virtualenv
-# ------------------------
 RUN poetry config virtualenvs.create false \
     && poetry install --no-root --no-interaction --no-ansi --with dev
 
