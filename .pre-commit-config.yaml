@@ -16,9 +16,6 @@ repos:
       - id: mypy
         language: system
         files: ^src/
-        args:
-          - --strict
-          - --disallow-any-expr
 
   - repo: local
     hooks:

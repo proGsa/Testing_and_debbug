@@ -10,6 +10,7 @@ from unittest.mock import AsyncMock
 from unittest.mock import Mock
 from unittest.mock import create_autospec
 
+import os
 import pytest
 import pytest_asyncio
 
@@ -36,6 +37,16 @@ from services.user_service import UserService
 import warnings
 from sqlalchemy.exc import SAWarning
 import logging
+
+from opentelemetry import trace
+from opentelemetry.instrumentation.requests import RequestsInstrumentor
+from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
+from opentelemetry.sdk.resources import Resource
+
 
 # Игнорируем все SAWarning
 warnings.filterwarnings("ignore", category=SAWarning)
@@ -101,7 +112,11 @@ async def event_loop() -> AsyncGenerator[asyncio.AbstractEventLoop]:
     loop.close()
 
 
-# engine = create_async_engine("postgresql+asyncpg://nastya:nastya@localhost:5434/mydb", echo=True)
+# engine = create_async_engine(
+#     "postgresql+asyncpg://nastya:nastya@db:5438/mydb",
+#     echo=True,
+#     connect_args={"options": "-csearch_path=travel_db"}
+# )
 engine = create_async_engine(
     "postgresql+asyncpg://test_user:test_password@localhost:5432/test_db", echo=True
 )
@@ -638,3 +653,43 @@ async def travel_service(db_session: AsyncSession) -> TravelService:
         db_session, user_repo, entertainment_repo, accommodation_repo
     )
     return TravelService(travel_repo)
+
+
+SERVICE_NAME = os.getenv("OTEL_SERVICE_NAME", "e2e_test_runner")
+
+
+def pytest_configure():
+    # only enable if collector reachable and ENABLE_TRACING set
+    if os.getenv("ENABLE_TRACING", "0") != "1":
+        return
+
+    provider = TracerProvider(resource=Resource.create({"service.name": SERVICE_NAME}))
+    exporter = OTLPSpanExporter(endpoint="http://otel-collector:4317", insecure=True)
+    provider.add_span_processor(BatchSpanProcessor(exporter))
+    trace.set_tracer_provider(provider)
+
+    # instrument http clients used in tests
+    try:
+        RequestsInstrumentor().instrument()
+    except Exception:
+        pass
+
+    try:
+        HTTPXClientInstrumentor().instrument()
+    except Exception:
+        # if not installed or incompatible, ignore
+        pass
+
+
+@pytest.fixture(scope="session", autouse=True)
+def write_run_metadata():
+    """Create/ensure the directory for test-reports and write a simple modes file."""
+    os.makedirs("/app/test-reports", exist_ok=True)
+    # Append or create run metadata for CI
+    mode = {
+        "ENABLE_TRACING": os.getenv("ENABLE_TRACING", "0"),
+        "LOG_LEVEL": os.getenv("LOG_LEVEL", "info"),
+    }
+    with open("/app/test-reports/run_metadata.txt", "a") as f:
+        f.write(str(mode) + "\n")
+    yield

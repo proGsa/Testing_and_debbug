@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 
-# from contextlib import AsyncGenerator
 from typing import AsyncGenerator
 from contextlib import asynccontextmanager
 
@@ -20,6 +19,7 @@ from routers.entertainment import entertainment_router
 from routers.route import router
 from routers.travel import travel_router
 from routers.user import user_router
+from tracing import setup_tracing
 
 
 templates = Jinja2Templates(directory="templates")
@@ -36,6 +36,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 
 app = FastAPI(lifespan=lifespan)
+setup_tracing(app)
 routers = [
     router,
     d_router,

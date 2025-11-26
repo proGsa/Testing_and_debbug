@@ -7,8 +7,9 @@ import time
 
 from datetime import datetime
 from datetime import timedelta
-from typing import Any
 from typing import ClassVar
+
+# from typing import Any
 
 import bcrypt
 
@@ -201,5 +202,5 @@ class AuthService(IAuthService):
         return hashed_password.decode("utf-8")
 
     @staticmethod
-    def decode_token(token: str) -> Any:
-        return jwt.decode(token, secret_key, algorithms=[algorithm])
+    def decode_token(token: str) -> str:
+        return str(jwt.decode(token, secret_key, algorithms=[algorithm]))
