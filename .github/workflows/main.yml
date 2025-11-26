@@ -130,93 +130,105 @@ jobs:
             allure-results/unit/
             test-reports/unit-tests.xml
         if: always()
+integration-tests:
+  runs-on: ubuntu-latest
+  needs: unit-tests
+  if: always()
+  env:
+    PYTHONPATH: ${{ github.workspace }}/src
 
-  integration-tests:
-    runs-on: ubuntu-latest
-    needs: unit-tests
-    if: always() 
-    env:
-      PYTHONPATH: ${{ github.workspace }}/src
+  services:
+    postgres:
+      image: postgres:15
+      env:
+        POSTGRES_USER: test_user
+        POSTGRES_PASSWORD: test_password
+        POSTGRES_DB: test_db
+      ports:
+        - 5432:5432
+      options: >-
+        --health-cmd="pg_isready -U test_user -d test_db"
+        --health-interval=5s
+        --health-timeout=5s
+        --health-retries=5
 
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: test_user
-          POSTGRES_PASSWORD: test_password
-          POSTGRES_DB: test_db
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U test_user -d test_db"
-          --health-interval=5s
-          --health-timeout=5s
-          --health-retries=5
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.13"
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
+    - name: Install Poetry
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Install Poetry
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+    - name: Install dependencies
+      run: |
+        poetry install --with dev
+        poetry run pip install allure-pytest
+        poetry run pip install opentelemetry-api opentelemetry-sdk \
+        opentelemetry-instrumentation-fastapi opentelemetry-instrumentation-requests \
+        opentelemetry-exporter-otlp opentelemetry.instrumentation.httpx
 
-      - name: Install dependencies
-        run: |
-          poetry install --with dev
-          poetry run pip install allure-pytest
-          poetry run pip install opentelemetry-api opentelemetry-sdk \
-          opentelemetry-instrumentation-fastapi opentelemetry-instrumentation-requests \
-          opentelemetry-exporter-otlp opentelemetry.instrumentation.httpx
+    - name: Create directories for test results
+      run: |
+        mkdir -p allure-results/integration
+        mkdir -p test-reports
+        mkdir -p tests/integration
 
-      - name: Create directories for test results
-        run: |
-          mkdir -p allure-results/integration
-          mkdir -p test-reports
+    # ------------------------------
+    # Step for skipped tests if unit tests failed
+    # ------------------------------
+    - name: Run skipped integration test (if unit tests failed)
+      if: ${{ needs.unit-tests.result != 'success' }}
+      run: |
+        cat <<EOF > tests/integration/skipped_integration.py
+        import pytest
 
-      - name: Run integration tests
-        run: |
-          if [ "${{ needs.unit-tests.result }}" != "success" ]; then
-            echo "Unit tests failed, running skipped test for integration"
-            mkdir -p tests/integration
-            echo "import pytest
-            @pytest.mark.skip(reason='Unit tests failed, integration skipped')
-            def test_skipped(): pass
-            " > tests/integration/skipped_integration.py
-            poetry run pytest tests/integration/skipped_integration.py -v \
-              --alluredir=allure-results/integration \
-              --junitxml=test-reports/integration-tests.xml
-          else
-            poetry run pytest tests/integration/ -v \
-              --alluredir=allure-results/integration \
-              --junitxml=test-reports/integration-tests.xml
-          fi
-        env:
-          DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
-          TEST_ENV: integration
+        @pytest.mark.skip(reason='Unit tests failed, integration skipped')
+        def test_skipped():
+            pass
+        EOF
+                poetry run pytest tests/integration/skipped_integration.py -v \
+                  --alluredir=allure-results/integration \
+                  --junitxml=test-reports/integration-tests.xml
+              env:
+                DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
+                TEST_ENV: integration
 
-      - name: Check if Allure results were generated
-        run: |
-          echo "Checking Allure results directory:"
-          ls -la allure-results/integration/ || echo "No Allure results found"
-          echo "Checking test reports directory:"
-          ls -la test-reports/ || echo "No test reports found"
+            # ------------------------------
+            # Step for normal integration tests if unit tests passed
+            # ------------------------------
+            - name: Run integration tests
+              if: ${{ needs.unit-tests.result == 'success' }}
+              run: |
+                poetry run pytest tests/integration/ -v \
+                  --alluredir=allure-results/integration \
+                  --junitxml=test-reports/integration-tests.xml
+              env:
+                DATABASE_URL: postgresql+asyncpg://test_user:test_password@localhost:5432/test_db
+                TEST_ENV: integration
 
-      - name: Upload integration test results
-        uses: actions/upload-artifact@v4
-        with:
-          name: integration-test-results
-          path: |
-            allure-results/integration/
-            test-reports/integration-tests.xml
-        if: always()
-        
+            - name: Check if Allure results were generated
+              run: |
+                echo "Checking Allure results directory:"
+                ls -la allure-results/integration/ || echo "No Allure results found"
+                echo "Checking test reports directory:"
+                ls -la test-reports/ || echo "No test reports found"
+
+            - name: Upload integration test results
+              uses: actions/upload-artifact@v4
+              with:
+                name: integration-test-results
+                path: |
+                  allure-results/integration/
+                  test-reports/integration-tests.xml
+              if: always()
+
   e2e-tests:
     runs-on: ubuntu-latest
     needs: integration-tests
