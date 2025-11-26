@@ -655,11 +655,7 @@ async def travel_service(db_session: AsyncSession) -> TravelService:
     return TravelService(travel_repo)
 
 
-SERVICE_NAME = os.getenv("OTEL_SERVICE_NAME", "e2e_test_runner")
-
-
 def pytest_configure():
-    # only enable if collector reachable and ENABLE_TRACING set
     if os.getenv("ENABLE_TRACING", "0") != "1":
         return
 
@@ -679,17 +675,3 @@ def pytest_configure():
     except Exception:
         # if not installed or incompatible, ignore
         pass
-
-
-@pytest.fixture(scope="session", autouse=True)
-def write_run_metadata():
-    """Create/ensure the directory for test-reports and write a simple modes file."""
-    os.makedirs("/app/test-reports", exist_ok=True)
-    # Append or create run metadata for CI
-    mode = {
-        "ENABLE_TRACING": os.getenv("ENABLE_TRACING", "0"),
-        "LOG_LEVEL": os.getenv("LOG_LEVEL", "info"),
-    }
-    with open("/app/test-reports/run_metadata.txt", "a") as f:
-        f.write(str(mode) + "\n")
-    yield
