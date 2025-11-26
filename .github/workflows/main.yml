@@ -337,27 +337,10 @@ jobs:
           docker --version
           docker compose version
 
-      - name: Check files before benchmark
+      - name: Prepare results directories
         run: |
-          echo "Listing current directory:"
-          ls -la
-          echo "Checking for pyproject.toml:"
-          if [ -f pyproject.toml ]; then
-            echo "pyproject.toml exists ✅"
-          else
-            echo "pyproject.toml NOT FOUND ❌"
-          fi
-          echo "Checking for poetry.lock:"
-          if [ -f poetry.lock ]; then
-            echo "poetry.lock exists ✅"
-          else
-            echo "poetry.lock NOT FOUND ❌"
-          fi
-
-      - name: Prepare results directory
-        run: |
-          mkdir -p $GITHUB_WORKSPACE/results
-          mkdir -p $GITHUB_WORKSPACE/allure-results/benchmark
+          mkdir -p results
+          mkdir -p allure-results/benchmark
 
       - name: Run benchmark script
         run: |
@@ -365,25 +348,32 @@ jobs:
           chmod +x benchmark/collect_stats.sh
           ./benchmark/run_benchmark.sh
 
+      - name: Verify generated files
+        run: |
+          echo "Results directory contents:"
+          ls -la results
+          echo "Allure benchmark directory contents:"
+          ls -la allure-results/benchmark
+
+      - name: Convert CSV to Allure attachments
+        run: |
+          for f in results/*.csv; do
+            name=$(basename "$f")
+            echo "Attaching $name to Allure"
+            cat "$f" > "allure-results/benchmark/${name}.txt"
+          done
+
       - name: Upload benchmark CSV results
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-metrics
-          path: $GITHUB_WORKSPACE/results/*.csv
-
-      - name: Convert CSV to Allure attachments
-        run: |
-          for f in $GITHUB_WORKSPACE/results/*.csv; do
-            name=$(basename "$f")
-            echo "Attaching $name to Allure"
-            cat "$f" > "$GITHUB_WORKSPACE/allure-results/benchmark/${name}.txt"
-          done
+          path: results/*.csv
 
       - name: Upload benchmark Allure files
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-allure
-          path: $GITHUB_WORKSPACE/allure-results/benchmark
+          path: allure-results/benchmark/*.txt
 
 
   # allure-report:
